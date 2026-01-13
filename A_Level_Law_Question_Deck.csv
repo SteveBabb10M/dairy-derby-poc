@@ -1,0 +1,53 @@
+ID,Difficulty,Question_Text,Correct_Answer,Distractor_1,Distractor_2
+1,Easy,What is meant by law?,Rules enforced by courts and the state,Moral opinions held by individuals,Social customs with no legal force
+2,Easy,What is the difference between criminal and civil law?,"Criminal law punishes offences, civil law resolves disputes","Criminal law involves contracts, civil law involves prisons","Criminal law is optional, civil law is compulsory"
+3,Easy,What does mens rea mean?,The mental element of a crime,The physical act of a crime,The punishment for a crime
+4,Easy,What does actus reus mean?,The guilty act,The guilty mind,The court decision
+5,Easy,What two elements are usually needed to prove a crime?,Actus reus and mens rea,Harm and punishment,Intention and sentence
+6,Easy,What is the standard of proof in criminal cases?,Beyond reasonable doubt,On the balance of probabilities,Absolute certainty
+7,Easy,What is the standard of proof in civil cases?,On the balance of probabilities,Beyond reasonable doubt,Beyond all doubt
+8,Easy,What is precedent?,A legal principle from an earlier case,A statute passed by Parliament,A decision made by a jury
+9,Easy,What does stare decisis mean?,Let the decision stand,Change the law,Ignore past cases
+10,Easy,What is statutory law?,Law made by Parliament,Law made by judges,Law made by juries
+11,Easy,What is common law?,Law developed through court decisions,Law written in statutes,Law created by government departments
+12,Easy,What is Parliamentary sovereignty?,Parliament is the supreme law-making body,Judges can override Parliament,The public vote on all laws
+13,Easy,What is delegated legislation?,Law made by bodies under Parliament’s authority,Law made by judges in court,Law made by the police
+14,Easy,Which is a type of delegated legislation?,Statutory instrument,Act of Parliament,Court judgment
+15,Easy,What is the role of a jury?,Decide guilt or innocence,Decide sentencing,Interpret statutes
+16,Easy,What is the role of a judge?,Apply the law and oversee the trial,Investigate crimes,Represent the defendant
+17,Easy,What is ratio decidendi?,The legal reason for a decision,Comments made in passing,The punishment given
+18,Easy,What is obiter dicta?,Comments not essential to the decision,The binding part of a case,A statute section
+19,Easy,What is intention in criminal law?,A decision to bring about a result,An accidental act,A careless mistake
+20,Easy,What is recklessness?,Taking an unjustified risk,Acting with full intention,Acting under duress
+21,Easy,What is strict liability?,No need to prove mens rea,No need to prove actus reus,Automatic imprisonment
+22,Easy,What is the age of criminal responsibility?,10,16,18
+23,Easy,What is a tort?,A civil wrong,A criminal offence,A defence
+24,Easy,What is the aim of criminal law?,Punish wrongdoing,Compensate victims financially,Resolve contractual disputes
+25,Easy,What is the aim of civil law?,Resolve disputes and provide remedies,Punish offenders,Protect public order
+26,Easy,What is sentencing?,Deciding the punishment,Deciding guilt,Writing statutes
+27,Easy,What is deterrence?,Discouraging crime through punishment,Reforming offenders,Compensating victims
+28,Easy,What is rehabilitation?,Reforming the offender,Punishing the offender,Isolating the offender
+29,Easy,What is retribution?,Punishing because the offender deserves it,Preventing future crime,Educating offenders
+30,Easy,What is an appeal?,Asking a higher court to review a decision,Restarting a trial automatically,Ignoring a verdict
+31,Easy,What court hears the most serious criminal cases?,Crown Court,Magistrates’ Court,County Court
+32,Easy,What court hears most minor criminal cases?,Magistrates’ Court,Crown Court,Supreme Court
+33,Easy,What is the Supreme Court?,The highest appeal court,A trial court,A jury court
+34,Easy,What is judicial review?,Reviewing the legality of decisions,Reviewing jury verdicts,Reviewing sentences only
+35,Easy,What is a fine?,A financial penalty,A prison sentence,A warning
+36,Easy,What is imprisonment?,Loss of liberty,A community sentence,A financial sanction
+37,Easy,What is a community order?,A non-custodial sentence,A prison sentence,A fine only
+38,Easy,What is probation?,Supervision in the community,Automatic release,Jury service
+39,Easy,What is the CPS?,Prosecuting authority,Defence service,Appeal court
+40,Easy,What is the burden of proof?,Responsibility to prove a case,Level of evidence required,Length of trial
+41,Easy,Who has the burden of proof in criminal cases?,Prosecution,Defendant,Judge
+42,Easy,What is self-defence?,Reasonable force to protect oneself,Revenge,Punishment
+43,Easy,What is duress?,Being forced to commit a crime,Acting accidentally,Acting recklessly
+44,Easy,What is insanity?,A mental condition affecting responsibility,Lack of intention,Alcohol use
+45,Easy,What is intoxication?,Being under the influence of substances,Being mentally ill,Being reckless
+46,Easy,What is a suspended sentence?,Prison sentence delayed unless conditions are broken,Immediate imprisonment,A fine
+47,Easy,What is consistency in sentencing?,Similar offences receive similar sentences,Different offenders get different treatment,Judges ignore guidelines
+48,Easy,What is the rule of law?,Everyone is subject to the law,Judges make laws freely,Parliament follows judges
+49,Easy,What is access to justice?,Ability to use the legal system,Winning every case,Free legal advice only
+50,Easy,What is justice?,Fair application of the law,Automatic punishment,Public opinion
+51,Medium,Mens rea refers to:,The defendant’s mental state at the time,The defendant’s actions during the offence,The defendant’s behaviour after arrest
+52,Hard,Mens rea refers specifically to:,The defendant’s mental element at the time of the act,The defendant’s awareness of consequences,The defendant’s intention or recklessness generally

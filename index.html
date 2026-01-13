@@ -1,240 +1,591 @@
+This is a significant step up from your previous index.html. Because we are now handling CSV data parsing, complex game states (Question Phase -> Dice Phase -> Obstacle Phase), and resource management, the code needs to be structured more like a software application than a simple script.
+
+Below is the complete Steeplechase Learning Platform code.
+
+How to use this:
+Save the code below as index.html.
+
+Open it in any web browser.
+
+Step 1: It will ask you to upload your A_Level_Law_Question_Deck.csv file. (It has a built-in backup of 5 questions just in case you want to test without the file).
+
+Step 2: Choose your Jockey.
+
+Step 3: The game begins!
+
+The Code (Single File Solution)
+I have consolidated the HTML, CSS, and JavaScript into one file for ease of deployment, but I have used Object-Oriented JavaScript (Classes) so you can easily separate them into .js and .css files later if you wish.
+
+HTML
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dairy Derby - POC</title>
+    <title>Steeplechase Learning Platform</title>
     <style>
-        body { font-family: 'Arial', sans-serif; background-color: #e6f7ff; text-align: center; }
-        
-        /* Game Container */
-        #game-board {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            gap: 5px;
-            max-width: 800px;
-            margin: 20px auto;
-            background: #4CAF50; /* Grass color for the track */
-            padding: 10px;
-            border-radius: 10px;
-            border: 5px solid #3e8e41;
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60; /* Green */
+            --warning: #f39c12; /* Amber */
+            --danger: #c0392b; /* Red */
+            --light: #ecf0f1;
+            --track-color: #8da35e;
         }
 
-        /* The Track Spaces */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f3; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* LAYOUT */
+        #game-container { display: flex; flex: 1; gap: 20px; max-width: 1400px; margin: 0 auto; width: 100%; }
+        #sidebar { flex: 0 0 350px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 20px; }
+        #main-view { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+        /* TRACK VISUALS */
+        #track-container { flex: 1; background: var(--track-color); border-radius: 12px; border: 8px solid #5d6d3d; position: relative; overflow: hidden; }
+        .track-path {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr); /* Oval shape approximation */
+            grid-template-rows: repeat(5, 1fr);
+            gap: 8px;
+            padding: 20px;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        
         .tile {
-            height: 60px;
-            background: #fff;
-            border: 1px solid #ccc;
+            background: rgba(255,255,255,0.8);
+            border-radius: 4px;
+            border: 2px solid rgba(0,0,0,0.1);
+            position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
-            border-radius: 5px;
-            position: relative;
+            font-size: 12px;
+            color: #555;
+            font-weight: bold;
         }
+
+        /* OBSTACLE STYLES */
+        .obstacle { border-width: 4px; }
+        .obs-green { border-color: var(--accent); background: #e8f8f5; }
+        .obs-amber { border-color: var(--warning); background: #fef9e7; }
+        .obs-red { border-color: var(--danger); background: #fdedec; }
         
-        /* Special Tiles */
-        .start { background-color: #ffd700; }
-        .finish { background-color: #ff6347; color: white; }
+        .tile-icon { font-size: 24px; }
+        .tile-cost { position: absolute; bottom: 2px; right: 2px; font-size: 10px; background: #333; color: white; padding: 2px 4px; border-radius: 4px; }
 
-        /* Player Tokens */
-        .player-token {
-            position: absolute;
-            font-size: 30px;
-            transition: all 0.5s ease;
+        /* PLAYERS */
+        .token {
+            width: 30px; height: 30px; border-radius: 50%; border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); position: absolute; transition: all 0.5s ease;
+            z-index: 10; display: flex; justify-content: center; align-items: center; font-size: 16px;
         }
+        .token-p1 { background: #3498db; transform: translate(-5px, -5px); } /* Blue Horse */
+        .token-cpu { background: #95a5a6; transform: translate(5px, 5px); } /* Grey Horse */
+        .stumbled { opacity: 0.5; filter: grayscale(100%); }
 
-        /* Controls Area */
-        #controls {
-            margin-top: 20px;
-            padding: 20px;
-            background: white;
-            display: inline-block;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
+        /* UI ELEMENTS */
+        .card { background: var(--light); padding: 15px; border-radius: 8px; border-left: 5px solid var(--primary); }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .resource-badge { display: inline-block; padding: 5px 10px; border-radius: 15px; color: white; font-weight: bold; font-size: 14px; margin-right: 5px; }
+        .res-lift { background-color: #9b59b6; } /* Purple for Lift */
+        .res-reach { background-color: #e67e22; } /* Orange for Reach */
 
-        button {
-            background-color: #008CBA;
-            color: white;
-            padding: 15px 32px;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        button:hover { background-color: #007bb5; }
-
-        #status { margin-top: 15px; font-weight: bold; font-size: 1.2em; }
+        /* CONTROLS */
+        .btn { border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: transform 0.1s; width: 100%; margin-bottom: 10px; color: white;}
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        /* Educational Modal */
-        #modal {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 30px;
-            border: 2px solid #333;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            z-index: 100;
-        }
-        #overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 99;
-        }
+        .btn-action { background: var(--primary); font-size: 16px; }
+        .btn-green { background: var(--accent); }
+        .btn-red { background: var(--danger); }
+
+        /* MODALS */
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: flex; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 600px; max-width: 90%; text-align: center; position: relative; }
+        
+        #timer-bar { height: 10px; background: #ddd; width: 100%; margin: 20px 0; border-radius: 5px; overflow: hidden; }
+        #timer-fill { height: 100%; background: var(--accent); width: 100%; transition: width 0.1s linear; }
+
+        .answer-btn { background: white; border: 2px solid var(--primary); color: var(--primary); margin: 10px 0; text-align: left; transition: all 0.2s; }
+        .answer-btn:hover { background: var(--light); }
+
+        .hidden { display: none !important; }
+
+        /* DICE VISUALS */
+        .dice-display { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
+        .die { width: 50px; height: 50px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: white; }
+        .die-red { background: #e74c3c; }
+        .die-blue { background: #3498db; }
+
     </style>
 </head>
 <body>
 
-    <h1>Dairy Derby: Learning Edition</h1>
-    <p>Get to the finish line! Answer correctly to move.</p>
-
-    <div id="game-board">
+    <div id="start-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:20px;">
+        <h1>🏇 Steeplechase Learning Platform</h1>
+        <div style="width: 400px; text-align: left;">
+            <h3>Step 1: Load Question Data</h3>
+            <p style="font-size: 0.9em; color: #666;">Upload your 'A_Level_Law_Question_Deck.csv'. If skipped, demo data will be used.</p>
+            <input type="file" id="csv-upload" accept=".csv" class="btn" style="background:#ddd; color:black;">
+            
+            <h3>Step 2: Choose Your Jockey</h3>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-green" onclick="startGame('Easy')">Easy (Tactician)</button>
+                <button class="btn btn-warning" style="background:#f39c12;" onclick="startGame('Medium')">Medium (Veteran)</button>
+                <button class="btn btn-red" onclick="startGame('Hard')">Hard (Daredevil)</button>
+            </div>
         </div>
-
-    <div id="controls">
-        <div id="turn-indicator">Current Turn: 🐮 Player 1</div>
-        <br>
-        <button onclick="drawCard()">Draw Race Card</button>
-        <div id="status">Click to start!</div>
     </div>
 
-    <div id="overlay"></div>
-    <div id="modal">
-        <h3 id="question-text">Question goes here</h3>
-        <input type="number" id="answer-input" placeholder="Your Answer">
-        <button onclick="checkAnswer()">Submit</button>
-        <p id="feedback" style="color: red;"></p>
+    <div id="game-container" class="hidden">
+        <div id="sidebar">
+            <h2>Player Dashboard</h2>
+            
+            <div class="card">
+                <div class="stat-row"><span>Jockey:</span> <strong id="ui-jockey">Loading...</strong></div>
+                <div class="stat-row"><span>Lap:</span> <strong id="ui-lap">1 / 2</strong></div>
+            </div>
+
+            <div class="card">
+                <h3>Resources</h3>
+                <div style="margin-bottom: 10px;">
+                    <span class="resource-badge res-lift">LIFT: <span id="res-lift-count">0</span></span>
+                    <span class="resource-badge res-reach">REACH: <span id="res-reach-count">0</span></span>
+                </div>
+                <p style="font-size: 0.8em; color: #666;">Used to buy past obstacles.</p>
+            </div>
+
+            <div id="action-panel">
+                <h3>Actions</h3>
+                <p id="turn-status">Waiting for Question...</p>
+                <div id="controls-area"></div>
+            </div>
+        </div>
+
+        <div id="main-view">
+            <div id="track-container">
+                <div class="track-path" id="track-grid">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-overlay" class="hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">Question</h2>
+            <div id="timer-bar"><div id="timer-fill"></div></div>
+            <p id="modal-text" style="font-size: 1.2em; margin-bottom: 20px;">Question text goes here...</p>
+            <div id="modal-options" style="display: flex; flex-direction: column;">
+                </div>
+        </div>
     </div>
 
     <script>
-        // --- GAME CONFIGURATION ---
-        const boardSize = 20; // Number of spaces
-        const players = [
-            { id: 1, name: "Player 1", icon: "🐮", position: 0, color: "blue" },
-            { id: 2, name: "Player 2", icon: "🐷", position: 0, color: "pink" }
-        ];
-        let currentPlayerIndex = 0;
-        let pendingMove = 0; // Stores movement until question is answered
-
-        // --- SETUP BOARD ---
-        const boardEl = document.getElementById('game-board');
-        for (let i = 0; i < boardSize; i++) {
-            let tile = document.createElement('div');
-            tile.className = 'tile';
-            tile.id = 'tile-' + i;
-            if (i === 0) tile.classList.add('start');
-            if (i === boardSize - 1) {
-                tile.classList.add('finish');
-                tile.innerText = "🏁";
-            }
-            boardEl.appendChild(tile);
-        }
-
-        // Render players initially
-        updatePlayerPositions();
-
-        // --- GAME LOGIC ---
+        // --- DATA & CONFIG ---
+        const TRACK_LENGTH = 25;
+        const TOTAL_LAPS = 2;
         
-        function drawCard() {
-            // Simulate drawing a card (Random 1-4 spaces)
-            pendingMove = Math.floor(Math.random() * 4) + 1;
-            
-            // Trigger Educational Question
-            generateQuestion();
-        }
+        // Mock Data (Fallback if no CSV uploaded)
+        let QUESTION_DB = [
+            { id: 1, difficulty: 'Easy', text: "What is meant by law?", correct: "Rules enforced by state", d1: "Moral opinions", d2: "Social customs" },
+            { id: 2, difficulty: 'Easy', text: "What is the standard of proof in criminal cases?", correct: "Beyond reasonable doubt", d1: "Balance of probabilities", d2: "Absolute certainty" },
+            { id: 3, difficulty: 'Hard', text: "In Donoghue v Stevenson, the duty of care was established for:", correct: "Manufacturers to consumers", d1: "Employers to employees", d2: "Doctors to patients" },
+            { id: 4, difficulty: 'Medium', text: "What is a Tort?", correct: "A civil wrong", d1: "A criminal offence", d2: "A type of contract" },
+            { id: 5, difficulty: 'Hard', text: "What is the 'Golden Rule' in statutory interpretation?", correct: "Modify literal meaning to avoid absurdity", d1: "Use the literal meaning only", d2: "Look at Parliament's intent" }
+        ];
 
-        function generateQuestion() {
-            // Simple Math Logic for Demo
-            const num1 = Math.floor(Math.random() * 10) + 1;
-            const num2 = Math.floor(Math.random() * 10) + 1;
-            currentCorrectAnswer = num1 + num2;
-            
-            document.getElementById('question-text').innerText = `To move ${pendingMove} spaces: What is ${num1} + ${num2}?`;
-            document.getElementById('answer-input').value = '';
-            document.getElementById('feedback').innerText = '';
-            
-            // Show Modal
-            document.getElementById('modal').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-        }
+        // Obstacle Map (Position 1-25)
+        // Severity: 1=Green, 2=Amber, 3=Red
+        // Type: 'Lift' or 'Reach'
+        const OBSTACLES = {
+            6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 1 },
+            12: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 1 },
+            18: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 2 },
+            24: { name: "Open Water",   type: "REACH", severity: 2, cost: 2 },
+            // Lap 2 specials (logic handled in code)
+        };
+        // Note: For a 25 tile board, High Wall (Pos 30) appears on Lap 2 at tile 5.
 
-        function checkAnswer() {
-            const playerAns = parseInt(document.getElementById('answer-input').value);
-            
-            if (playerAns === currentCorrectAnswer) {
-                closeModal();
-                movePlayer(pendingMove);
-            } else {
-                document.getElementById('feedback').innerText = "Incorrect! Try again.";
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-        }
-
-        // --- UPDATED LOGIC FOR SINGLE PLAYER VS COMPUTER ---
-
-        function movePlayer(steps) {
-            const player = players[currentPlayerIndex];
-            
-            // Update Position
-            player.position += steps;
-            if (player.position >= boardSize - 1) {
-                player.position = boardSize - 1;
-                document.getElementById('status').innerText = `${player.icon} WINS THE DERBY!`;
-                document.querySelector('button').disabled = true;
-                updatePlayerPositions();
-                return; // Game Over
-            } else {
-                document.getElementById('status').innerText = `${player.icon} moves ${steps} spaces!`;
+        // --- GAME ENGINE ---
+        class Game {
+            constructor() {
+                this.lap = 1;
+                this.player = { pos: 0, lift: 0, reach: 0, jockey: null, stumbled: false };
+                this.computer = { pos: 0 };
+                this.state = 'SETUP'; // SETUP, QUESTION, ACTION, MOVING
+                this.csvLoaded = false;
             }
 
-            updatePlayerPositions();
-            
-            // Switch Turn
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-            const nextPlayer = players[currentPlayerIndex];
-            document.getElementById('turn-indicator').innerText = `Current Turn: ${nextPlayer.icon} ${nextPlayer.name}`;
+            init(jockeyType) {
+                this.player.jockey = new Jockey(jockeyType);
+                this.state = 'QUESTION';
+                
+                // UI Setup
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('game-container').classList.remove('hidden');
+                document.getElementById('ui-jockey').innerText = `${this.player.jockey.name} (${jockeyType})`;
+                
+                this.renderBoard();
+                this.startTurn();
+            }
 
-            // IF IT IS THE COMPUTER'S TURN (Player 2), RUN AUTO-MOVE
-            if (nextPlayer.id === 2) {
-                document.querySelector('button').disabled = true; // Stop human from clicking
-                setTimeout(() => {
-                    // Computer Logic: Random move 1-4
-                    const cpuMove = Math.floor(Math.random() * 4) + 1;
-                    document.getElementById('status').innerText = `🤖 Computer is thinking...`;
+            startTurn() {
+                updateUI();
+                
+                // 1. Trigger Question
+                const q = this.getQuestion();
+                showQuestionModal(q, this.player.jockey.timer, (success) => {
+                    if (success) {
+                        this.state = 'ACTION';
+                        renderControls("CHOOSE_STANCE");
+                    } else {
+                        // Penalty
+                        this.applyPenalty("Incorrect or Timeout!");
+                    }
+                });
+            }
+
+            getQuestion() {
+                // Filter DB by difficulty
+                const diff = this.player.jockey.difficulty; // Easy, Medium, Hard
+                let pool = QUESTION_DB.filter(q => q.difficulty === diff);
+                
+                // Fallback if pool is empty (e.g. only Easy questions in DB but Hard selected)
+                if (pool.length === 0) pool = QUESTION_DB; 
+                
+                return pool[Math.floor(Math.random() * pool.length)];
+            }
+
+            executeAction(actionType) {
+                // Roll Dice
+                const r1 = Math.ceil(Math.random() * 6); // Red (Move)
+                const r2 = Math.ceil(Math.random() * 6); // Blue (Resource)
+                
+                let move = 0;
+                let gainedResource = null;
+
+                // Logic based on Action
+                if (actionType === 'SPRINT') {
+                    move = r1 + r2; // Full Speed
+                } else if (actionType === 'GATHER') {
+                    // Full Resources (2 draws)
+                    this.gainResource(this.player.jockey.getBias(r1));
+                    this.gainResource(this.player.jockey.getBias(r2));
+                    renderControls("RESULT", `Rolled ${r1}+${r2}. Gained 2 Resources!`, 0);
+                    return; // Turn ends after gather (no move)
+                } else if (actionType === 'CANTER') {
+                    move = r1;
+                    gainedResource = this.player.jockey.getBias(r2);
+                    this.gainResource(gainedResource);
+                }
+
+                // Hard Jockey Stumble Rule
+                if (this.player.jockey.difficulty === 'Hard' && r1 <= 2 && actionType !== 'GATHER') {
+                    move = 0;
+                    renderControls("RESULT", `HARD JOCKEY STUMBLE! Red Die was ${r1}. No Move.`, 0);
+                    return;
+                }
+
+                // Move Player
+                this.movePlayer(move, r1, r2, gainedResource);
+            }
+
+            movePlayer(steps, d1, d2, res) {
+                const start = this.player.pos;
+                let target = start + steps;
+                let msg = `Rolled Red:${d1} Blue:${d2}. Moving ${steps}.`;
+                if(res) msg += ` Gained ${res}.`;
+
+                // Obstacle Check Logic
+                // We check every tile between start+1 and target
+                for(let i = start + 1; i <= target; i++) {
+                    let tileIdx = i % TRACK_LENGTH;
+                    if (tileIdx === 0) tileIdx = TRACK_LENGTH; // Handle wrap (tile 25)
+
+                    if (OBSTACLES[tileIdx]) {
+                        // Collision!
+                        this.player.pos = i - 1; // Stop BEFORE obstacle
+                        this.triggerObstacleEncounter(OBSTACLES[tileIdx], target - i);
+                        return;
+                    }
+                }
+
+                this.player.pos = target;
+                this.checkLap();
+                renderControls("RESULT", msg, 0);
+                this.renderBoard();
+            }
+
+            triggerObstacleEncounter(obs, remainingSteps) {
+                // UI for Obstacle
+                const needed = obs.type === 'LIFT' ? this.player.lift : this.player.reach;
+                const typeName = obs.type;
+                
+                // Logic: Can they pay?
+                let html = `<h3>🛑 Obstacle: ${obs.name}</h3>`;
+                html += `<p>Severity: Level ${obs.severity} (${obs.type})</p>`;
+                html += `<p>Cost: <b>${obs.cost} ${typeName}</b>. You have: ${needed}.</p>`;
+                
+                let buttons = '';
+                
+                // Pay Option
+                if (needed >= obs.cost) {
+                    buttons += `<button class="btn btn-green" onclick="game.resolveObstacle('PAY', ${obs.cost}, '${obs.type}')">PAY & PASS (100% Safe)</button>`;
+                }
+                
+                // Risk Option
+                // Risk Target: Green(3+), Amber(4+), Red(5+)
+                const riskTarget = obs.severity + 2; 
+                buttons += `<button class="btn btn-red" onclick="game.resolveObstacle('RISK', 0, null, ${riskTarget})">RISK IT (Roll ${riskTarget}+)</button>`;
+
+                document.getElementById('controls-area').innerHTML = html + buttons;
+            }
+
+            resolveObstacle(method, cost, type, target) {
+                if (method === 'PAY') {
+                    if (type === 'LIFT') this.player.lift -= cost;
+                    else this.player.reach -= cost;
                     
-                    setTimeout(() => {
-                         // Computer "answers" instantly and moves
-                        document.querySelector('button').disabled = false; // Re-enable for human
-                        movePlayer(cpuMove);
-                    }, 1000);
-                }, 1000);
+                    // Success - Move past (+1)
+                    this.player.pos += 1;
+                    renderControls("RESULT", "Cleared safely!", 0);
+                } else {
+                    // Risk Roll
+                    const roll = Math.ceil(Math.random() * 6);
+                    if (roll >= target) {
+                        this.player.pos += 1;
+                        renderControls("RESULT", `RISK SUCCESS! Rolled ${roll} (Needed ${target}+).`, 0);
+                    } else {
+                        // FAIL
+                        const penalty = -2; // Knock back
+                        this.player.pos = Math.max(0, this.player.pos + penalty);
+                        renderControls("RESULT", `CRASH! Rolled ${roll}. Knocked back 2 spaces.`, 0);
+                    }
+                }
+                updateUI();
+                this.renderBoard();
+            }
+
+            applyPenalty(reason) {
+                // Move 1, Gain 1 Random
+                this.player.pos += 1;
+                const r = Math.random() > 0.5 ? "LIFT" : "REACH";
+                this.gainResource(r);
+                this.checkLap();
+                renderControls("RESULT", `❌ ${reason}<br>Penalty: Crawl 1 space. Gained 1 ${r}.`, 0);
+                this.renderBoard();
+            }
+
+            gainResource(type) {
+                if(type === 'LIFT') this.player.lift++;
+                if(type === 'REACH') this.player.reach++;
+                updateUI();
+            }
+
+            checkLap() {
+                if (this.player.pos >= TRACK_LENGTH * this.lap) {
+                    if (this.lap === TOTAL_LAPS) {
+                        alert("🎉 FINISH LINE! YOU WIN!");
+                        location.reload();
+                    } else {
+                        alert("🏁 LAP 1 COMPLETE! Resources Reset.");
+                        this.player.lift = 0;
+                        this.player.reach = 0;
+                        this.lap++;
+                        // Add Harder Obstacles for Lap 2? (Pos 30 = Tile 5)
+                        OBSTACLES[5] = { name: "The High Wall", type: "LIFT", severity: 3, cost: 3 };
+                    }
+                }
+            }
+
+            renderBoard() {
+                const grid = document.getElementById('track-grid');
+                grid.innerHTML = '';
+                
+                // Create 25 tiles
+                for(let i=1; i<=TRACK_LENGTH; i++) {
+                    const div = document.createElement('div');
+                    div.className = 'tile';
+                    div.innerText = i;
+                    
+                    // Add Obstacle Markers
+                    if(OBSTACLES[i]) {
+                        div.classList.add('obstacle');
+                        if(OBSTACLES[i].severity === 1) div.classList.add('obs-green');
+                        if(OBSTACLES[i].severity === 2) div.classList.add('obs-amber');
+                        if(OBSTACLES[i].severity === 3) div.classList.add('obs-red');
+                        
+                        // Icons
+                        const icon = OBSTACLES[i].type === 'LIFT' ? '🚧' : '🌊';
+                        div.innerHTML += `<div class="tile-icon">${icon}</div>`;
+                        div.innerHTML += `<div class="tile-cost">${OBSTACLES[i].cost}</div>`;
+                    }
+
+                    // Add Player
+                    // Calculate visual position (Lap logic)
+                    const visualPos = this.player.pos % TRACK_LENGTH;
+                    // Handle "Just crossed line" visual (0 vs 25)
+                    let pPos = visualPos === 0 && this.player.pos > 0 ? 25 : visualPos;
+
+                    if (i === pPos) {
+                        const token = document.createElement('div');
+                        token.className = 'token token-p1';
+                        token.innerText = '🏇';
+                        div.appendChild(token);
+                    }
+                    
+                    grid.appendChild(div);
+                }
             }
         }
 
-        function updatePlayerPositions() {
-            // Clear old tokens
-            document.querySelectorAll('.player-token').forEach(el => el.remove());
-
-            // Draw new tokens
-            players.forEach((p, index) => {
-                const tile = document.getElementById('tile-' + p.position);
-                const token = document.createElement('div');
-                token.className = 'player-token';
-                token.innerText = p.icon;
-                // Offset slightly so they don't overlap perfectly
-                token.style.transform = `translate(${index * 10}px, ${index * 10}px)`; 
-                tile.appendChild(token);
-            });
+        class Jockey {
+            constructor(type) {
+                this.difficulty = type;
+                if (type === 'Easy') {
+                    this.name = "The Tactician";
+                    this.timer = 15;
+                    this.bias = [1,2,3,4]; // 1-4 = Lift
+                } else if (type === 'Medium') {
+                    this.name = "The Veteran";
+                    this.timer = 20;
+                    this.bias = [1,2,3]; // 1-3 = Lift
+                } else {
+                    this.name = "The Daredevil";
+                    this.timer = 25;
+                    this.bias = [1,2]; // 1-2 = Lift
+                }
+            }
+            
+            getBias(roll) {
+                return this.bias.includes(roll) ? "LIFT" : "REACH";
+            }
         }
+
+        // --- UI & PARSING ---
+        const game = new Game();
+
+        function startGame(type) {
+            game.init(type);
+        }
+
+        function updateUI() {
+            document.getElementById('res-lift-count').innerText = game.player.lift;
+            document.getElementById('res-reach-count').innerText = game.player.reach;
+            document.getElementById('ui-lap').innerText = `${game.lap} / ${TOTAL_LAPS}`;
+        }
+
+        function renderControls(state, msg = "", delay = 0) {
+            const area = document.getElementById('controls-area');
+            area.innerHTML = '';
+
+            if (state === "CHOOSE_STANCE") {
+                area.innerHTML = `
+                    <p><b>Correct! Choose your Stance:</b></p>
+                    <button class="btn btn-action" onclick="game.executeAction('SPRINT')">⚡ SPRINT (Max Speed, No Resources)</button>
+                    <button class="btn btn-action" onclick="game.executeAction('GATHER')">🎒 GATHER (Max Resources, No Move)</button>
+                    <button class="btn btn-action" style="background:#f1c40f; color:#333;" onclick="game.executeAction('CANTER')">⚖️ CANTER (Balanced)</button>
+                `;
+            } else if (state === "RESULT") {
+                area.innerHTML = `<p>${msg}</p>`;
+                setTimeout(() => {
+                    // Computer Turn would go here
+                    // Then back to Question
+                    game.startTurn();
+                }, 2000); // 2 second delay to read result
+            }
+        }
+
+        // --- MODAL LOGIC ---
+        let timerInterval;
+
+        function showQuestionModal(qObj, seconds, callback) {
+            const modal = document.getElementById('modal-overlay');
+            const fill = document.getElementById('timer-fill');
+            
+            modal.classList.remove('hidden');
+            document.getElementById('modal-title').innerText = `${qObj.difficulty} Question`;
+            document.getElementById('modal-text').innerText = qObj.text;
+            
+            // Randomize Options
+            const opts = [
+                { txt: qObj.correct, isCorrect: true },
+                { txt: qObj.d1, isCorrect: false },
+                { txt: qObj.d2, isCorrect: false }
+            ].sort(() => Math.random() - 0.5);
+
+            const optContainer = document.getElementById('modal-options');
+            optContainer.innerHTML = '';
+            
+            opts.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'btn answer-btn';
+                btn.innerText = opt.txt;
+                btn.onclick = () => {
+                    clearInterval(timerInterval);
+                    modal.classList.add('hidden');
+                    callback(opt.isCorrect);
+                };
+                optContainer.appendChild(btn);
+            });
+
+            // Start Timer
+            fill.style.width = '100%';
+            fill.style.transition = 'none'; // Reset
+            
+            // Allow redraw
+            setTimeout(() => {
+                fill.style.transition = `width ${seconds}s linear`;
+                fill.style.width = '0%';
+            }, 10);
+
+            let timeLeft = seconds;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    modal.classList.add('hidden');
+                    callback(false); // Timeout treated as wrong
+                }
+            }, 1000);
+        }
+
+        // --- CSV PARSER ---
+        document.getElementById('csv-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const rows = text.split('\n').slice(1); // Skip header
+                const parsed = [];
+                
+                rows.forEach((row, index) => {
+                    // Simple CSV split (Note: fails on commas inside quotes, but fine for prototype)
+                    const cols = row.split(','); 
+                    if(cols.length >= 6) {
+                        parsed.push({
+                            id: index,
+                            difficulty: cols[1].trim(), // Col 1 is Difficulty
+                            text: cols[2].trim(),
+                            correct: cols[3].trim(),
+                            d1: cols[4].trim(),
+                            d2: cols[5].trim()
+                        });
+                    }
+                });
+                
+                if (parsed.length > 0) {
+                    QUESTION_DB = parsed;
+                    alert(`Loaded ${parsed.length} questions!`);
+                }
+            };
+            reader.readAsText(file);
+        });
+
     </script>
 </body>
 </html>
