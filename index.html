@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dairy Derby - POC</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #e6f7ff; text-align: center; }
+        
+        /* Game Container */
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            max-width: 800px;
+            margin: 20px auto;
+            background: #4CAF50; /* Grass color for the track */
+            padding: 10px;
+            border-radius: 10px;
+            border: 5px solid #3e8e41;
+        }
+
+        /* The Track Spaces */
+        .tile {
+            height: 60px;
+            background: #fff;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            border-radius: 5px;
+            position: relative;
+        }
+        
+        /* Special Tiles */
+        .start { background-color: #ffd700; }
+        .finish { background-color: #ff6347; color: white; }
+
+        /* Player Tokens */
+        .player-token {
+            position: absolute;
+            font-size: 30px;
+            transition: all 0.5s ease;
+        }
+
+        /* Controls Area */
+        #controls {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            display: inline-block;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background-color: #008CBA;
+            color: white;
+            padding: 15px 32px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover { background-color: #007bb5; }
+
+        #status { margin-top: 15px; font-weight: bold; font-size: 1.2em; }
+        
+        /* Educational Modal */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border: 2px solid #333;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Dairy Derby: Learning Edition</h1>
+    <p>Get to the finish line! Answer correctly to move.</p>
+
+    <div id="game-board">
+        </div>
+
+    <div id="controls">
+        <div id="turn-indicator">Current Turn: 🐮 Player 1</div>
+        <br>
+        <button onclick="drawCard()">Draw Race Card</button>
+        <div id="status">Click to start!</div>
+    </div>
+
+    <div id="overlay"></div>
+    <div id="modal">
+        <h3 id="question-text">Question goes here</h3>
+        <input type="number" id="answer-input" placeholder="Your Answer">
+        <button onclick="checkAnswer()">Submit</button>
+        <p id="feedback" style="color: red;"></p>
+    </div>
+
+    <script>
+        // --- GAME CONFIGURATION ---
+        const boardSize = 20; // Number of spaces
+        const players = [
+            { id: 1, name: "Player 1", icon: "🐮", position: 0, color: "blue" },
+            { id: 2, name: "Player 2", icon: "🐷", position: 0, color: "pink" }
+        ];
+        let currentPlayerIndex = 0;
+        let pendingMove = 0; // Stores movement until question is answered
+
+        // --- SETUP BOARD ---
+        const boardEl = document.getElementById('game-board');
+        for (let i = 0; i < boardSize; i++) {
+            let tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.id = 'tile-' + i;
+            if (i === 0) tile.classList.add('start');
+            if (i === boardSize - 1) {
+                tile.classList.add('finish');
+                tile.innerText = "🏁";
+            }
+            boardEl.appendChild(tile);
+        }
+
+        // Render players initially
+        updatePlayerPositions();
+
+        // --- GAME LOGIC ---
+        
+        function drawCard() {
+            // Simulate drawing a card (Random 1-4 spaces)
+            pendingMove = Math.floor(Math.random() * 4) + 1;
+            
+            // Trigger Educational Question
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            // Simple Math Logic for Demo
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            currentCorrectAnswer = num1 + num2;
+            
+            document.getElementById('question-text').innerText = `To move ${pendingMove} spaces: What is ${num1} + ${num2}?`;
+            document.getElementById('answer-input').value = '';
+            document.getElementById('feedback').innerText = '';
+            
+            // Show Modal
+            document.getElementById('modal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function checkAnswer() {
+            const playerAns = parseInt(document.getElementById('answer-input').value);
+            
+            if (playerAns === currentCorrectAnswer) {
+                closeModal();
+                movePlayer(pendingMove);
+            } else {
+                document.getElementById('feedback').innerText = "Incorrect! Try again.";
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        // --- UPDATED LOGIC FOR SINGLE PLAYER VS COMPUTER ---
+
+        function movePlayer(steps) {
+            const player = players[currentPlayerIndex];
+            
+            // Update Position
+            player.position += steps;
+            if (player.position >= boardSize - 1) {
+                player.position = boardSize - 1;
+                document.getElementById('status').innerText = `${player.icon} WINS THE DERBY!`;
+                document.querySelector('button').disabled = true;
+                updatePlayerPositions();
+                return; // Game Over
+            } else {
+                document.getElementById('status').innerText = `${player.icon} moves ${steps} spaces!`;
+            }
+
+            updatePlayerPositions();
+            
+            // Switch Turn
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            const nextPlayer = players[currentPlayerIndex];
+            document.getElementById('turn-indicator').innerText = `Current Turn: ${nextPlayer.icon} ${nextPlayer.name}`;
+
+            // IF IT IS THE COMPUTER'S TURN (Player 2), RUN AUTO-MOVE
+            if (nextPlayer.id === 2) {
+                document.querySelector('button').disabled = true; // Stop human from clicking
+                setTimeout(() => {
+                    // Computer Logic: Random move 1-4
+                    const cpuMove = Math.floor(Math.random() * 4) + 1;
+                    document.getElementById('status').innerText = `🤖 Computer is thinking...`;
+                    
+                    setTimeout(() => {
+                         // Computer "answers" instantly and moves
+                        document.querySelector('button').disabled = false; // Re-enable for human
+                        movePlayer(cpuMove);
+                    }, 1000);
+                }, 1000);
+            }
+        }
+
+        function updatePlayerPositions() {
+            // Clear old tokens
+            document.querySelectorAll('.player-token').forEach(el => el.remove());
+
+            // Draw new tokens
+            players.forEach((p, index) => {
+                const tile = document.getElementById('tile-' + p.position);
+                const token = document.createElement('div');
+                token.className = 'player-token';
+                token.innerText = p.icon;
+                // Offset slightly so they don't overlap perfectly
+                token.style.transform = `translate(${index * 10}px, ${index * 10}px)`; 
+                tile.appendChild(token);
+            });
+        }
+    </script>
+</body>
+</html>
