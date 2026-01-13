@@ -1,23 +1,3 @@
-This is a significant step up from your previous index.html. Because we are now handling CSV data parsing, complex game states (Question Phase -> Dice Phase -> Obstacle Phase), and resource management, the code needs to be structured more like a software application than a simple script.
-
-Below is the complete Steeplechase Learning Platform code.
-
-How to use this:
-Save the code below as index.html.
-
-Open it in any web browser.
-
-Step 1: It will ask you to upload your A_Level_Law_Question_Deck.csv file. (It has a built-in backup of 5 questions just in case you want to test without the file).
-
-Step 2: Choose your Jockey.
-
-Step 3: The game begins!
-
-The Code (Single File Solution)
-I have consolidated the HTML, CSS, and JavaScript into one file for ease of deployment, but I have used Object-Oriented JavaScript (Classes) so you can easily separate them into .js and .css files later if you wish.
-
-HTML
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -100,6 +80,7 @@ HTML
         .btn-action { background: var(--primary); font-size: 16px; }
         .btn-green { background: var(--accent); }
         .btn-red { background: var(--danger); }
+        .btn-warning { background: var(--warning); color: #333; }
 
         /* MODALS */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: flex; justify-content: center; align-items: center; }
@@ -118,6 +99,12 @@ HTML
         .die { width: 50px; height: 50px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: white; }
         .die-red { background: #e74c3c; }
         .die-blue { background: #3498db; }
+        
+        /* LOADING SPINNER */
+        .loader {
+            border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     </style>
 </head>
@@ -125,17 +112,21 @@ HTML
 
     <div id="start-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:20px;">
         <h1>🏇 Steeplechase Learning Platform</h1>
-        <div style="width: 400px; text-align: left;">
-            <h3>Step 1: Load Question Data</h3>
-            <p style="font-size: 0.9em; color: #666;">Upload your 'A_Level_Law_Question_Deck.csv'. If skipped, demo data will be used.</p>
-            <input type="file" id="csv-upload" accept=".csv" class="btn" style="background:#ddd; color:black;">
-            
-            <h3>Step 2: Choose Your Jockey</h3>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-green" onclick="startGame('Easy')">Easy (Tactician)</button>
-                <button class="btn btn-warning" style="background:#f39c12;" onclick="startGame('Medium')">Medium (Veteran)</button>
-                <button class="btn btn-red" onclick="startGame('Hard')">Hard (Daredevil)</button>
+        
+        <div id="loading-area" style="text-align: center;">
+            <div class="loader"></div>
+            <p>Loading Question Deck...</p>
+        </div>
+
+        <div id="selection-area" class="hidden" style="width: 400px; text-align: center;">
+            <h3 style="color: var(--accent);">System Ready</h3>
+            <p>Choose Your Jockey Strategy</p>
+            <div style="display:flex; gap:10px; justify-content: center; margin-top: 20px;">
+                <button class="btn btn-green" onclick="startGame('Easy')">Easy<br><span style="font-size:0.8em">The Tactician</span></button>
+                <button class="btn btn-warning" onclick="startGame('Medium')">Medium<br><span style="font-size:0.8em">The Veteran</span></button>
+                <button class="btn btn-red" onclick="startGame('Hard')">Hard<br><span style="font-size:0.8em">The Daredevil</span></button>
             </div>
+            <p id="deck-status" style="margin-top: 20px; font-size: 0.8em; color: #7f8c8d;"></p>
         </div>
     </div>
 
@@ -186,43 +177,36 @@ HTML
         // --- DATA & CONFIG ---
         const TRACK_LENGTH = 25;
         const TOTAL_LAPS = 2;
+        const CSV_FILENAME = 'A_Level_Law_Question_Deck.csv'; 
         
-        // Mock Data (Fallback if no CSV uploaded)
+        // Mock Data (Fallback if fetch fails or running locally without server)
         let QUESTION_DB = [
-            { id: 1, difficulty: 'Easy', text: "What is meant by law?", correct: "Rules enforced by state", d1: "Moral opinions", d2: "Social customs" },
-            { id: 2, difficulty: 'Easy', text: "What is the standard of proof in criminal cases?", correct: "Beyond reasonable doubt", d1: "Balance of probabilities", d2: "Absolute certainty" },
-            { id: 3, difficulty: 'Hard', text: "In Donoghue v Stevenson, the duty of care was established for:", correct: "Manufacturers to consumers", d1: "Employers to employees", d2: "Doctors to patients" },
-            { id: 4, difficulty: 'Medium', text: "What is a Tort?", correct: "A civil wrong", d1: "A criminal offence", d2: "A type of contract" },
-            { id: 5, difficulty: 'Hard', text: "What is the 'Golden Rule' in statutory interpretation?", correct: "Modify literal meaning to avoid absurdity", d1: "Use the literal meaning only", d2: "Look at Parliament's intent" }
+            { id: 1, difficulty: 'Easy', text: "DEMO: What is meant by law?", correct: "Rules enforced by state", d1: "Moral opinions", d2: "Social customs" },
+            { id: 2, difficulty: 'Easy', text: "DEMO: Standard of proof in criminal cases?", correct: "Beyond reasonable doubt", d1: "Balance of probabilities", d2: "Absolute certainty" },
+            { id: 3, difficulty: 'Hard', text: "DEMO: Donoghue v Stevenson established duty of care for:", correct: "Manufacturers to consumers", d1: "Employers to employees", d2: "Doctors to patients" },
+            { id: 4, difficulty: 'Medium', text: "DEMO: What is a Tort?", correct: "A civil wrong", d1: "A criminal offence", d2: "A type of contract" }
         ];
 
-        // Obstacle Map (Position 1-25)
-        // Severity: 1=Green, 2=Amber, 3=Red
-        // Type: 'Lift' or 'Reach'
+        // Obstacle Map
         const OBSTACLES = {
             6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 1 },
             12: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 1 },
             18: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 2 },
             24: { name: "Open Water",   type: "REACH", severity: 2, cost: 2 },
-            // Lap 2 specials (logic handled in code)
         };
-        // Note: For a 25 tile board, High Wall (Pos 30) appears on Lap 2 at tile 5.
 
         // --- GAME ENGINE ---
         class Game {
             constructor() {
                 this.lap = 1;
-                this.player = { pos: 0, lift: 0, reach: 0, jockey: null, stumbled: false };
-                this.computer = { pos: 0 };
-                this.state = 'SETUP'; // SETUP, QUESTION, ACTION, MOVING
-                this.csvLoaded = false;
+                this.player = { pos: 0, lift: 0, reach: 0, jockey: null };
+                this.state = 'SETUP'; 
             }
 
             init(jockeyType) {
                 this.player.jockey = new Jockey(jockeyType);
                 this.state = 'QUESTION';
                 
-                // UI Setup
                 document.getElementById('start-screen').classList.add('hidden');
                 document.getElementById('game-container').classList.remove('hidden');
                 document.getElementById('ui-jockey').innerText = `${this.player.jockey.name} (${jockeyType})`;
@@ -233,62 +217,48 @@ HTML
 
             startTurn() {
                 updateUI();
-                
-                // 1. Trigger Question
                 const q = this.getQuestion();
                 showQuestionModal(q, this.player.jockey.timer, (success) => {
                     if (success) {
                         this.state = 'ACTION';
                         renderControls("CHOOSE_STANCE");
                     } else {
-                        // Penalty
                         this.applyPenalty("Incorrect or Timeout!");
                     }
                 });
             }
 
             getQuestion() {
-                // Filter DB by difficulty
-                const diff = this.player.jockey.difficulty; // Easy, Medium, Hard
+                const diff = this.player.jockey.difficulty; 
                 let pool = QUESTION_DB.filter(q => q.difficulty === diff);
-                
-                // Fallback if pool is empty (e.g. only Easy questions in DB but Hard selected)
-                if (pool.length === 0) pool = QUESTION_DB; 
-                
+                if (pool.length === 0) pool = QUESTION_DB; // Safety fallback
                 return pool[Math.floor(Math.random() * pool.length)];
             }
 
             executeAction(actionType) {
-                // Roll Dice
-                const r1 = Math.ceil(Math.random() * 6); // Red (Move)
-                const r2 = Math.ceil(Math.random() * 6); // Blue (Resource)
-                
+                const r1 = Math.ceil(Math.random() * 6);
+                const r2 = Math.ceil(Math.random() * 6);
                 let move = 0;
                 let gainedResource = null;
 
-                // Logic based on Action
                 if (actionType === 'SPRINT') {
-                    move = r1 + r2; // Full Speed
+                    move = r1 + r2; 
                 } else if (actionType === 'GATHER') {
-                    // Full Resources (2 draws)
                     this.gainResource(this.player.jockey.getBias(r1));
                     this.gainResource(this.player.jockey.getBias(r2));
                     renderControls("RESULT", `Rolled ${r1}+${r2}. Gained 2 Resources!`, 0);
-                    return; // Turn ends after gather (no move)
+                    return; 
                 } else if (actionType === 'CANTER') {
                     move = r1;
                     gainedResource = this.player.jockey.getBias(r2);
                     this.gainResource(gainedResource);
                 }
 
-                // Hard Jockey Stumble Rule
                 if (this.player.jockey.difficulty === 'Hard' && r1 <= 2 && actionType !== 'GATHER') {
                     move = 0;
                     renderControls("RESULT", `HARD JOCKEY STUMBLE! Red Die was ${r1}. No Move.`, 0);
                     return;
                 }
-
-                // Move Player
                 this.movePlayer(move, r1, r2, gainedResource);
             }
 
@@ -298,48 +268,37 @@ HTML
                 let msg = `Rolled Red:${d1} Blue:${d2}. Moving ${steps}.`;
                 if(res) msg += ` Gained ${res}.`;
 
-                // Obstacle Check Logic
-                // We check every tile between start+1 and target
                 for(let i = start + 1; i <= target; i++) {
                     let tileIdx = i % TRACK_LENGTH;
-                    if (tileIdx === 0) tileIdx = TRACK_LENGTH; // Handle wrap (tile 25)
+                    if (tileIdx === 0) tileIdx = TRACK_LENGTH; 
 
                     if (OBSTACLES[tileIdx]) {
-                        // Collision!
-                        this.player.pos = i - 1; // Stop BEFORE obstacle
+                        this.player.pos = i - 1; 
                         this.triggerObstacleEncounter(OBSTACLES[tileIdx], target - i);
                         return;
                     }
                 }
-
                 this.player.pos = target;
                 this.checkLap();
                 renderControls("RESULT", msg, 0);
                 this.renderBoard();
             }
 
-            triggerObstacleEncounter(obs, remainingSteps) {
-                // UI for Obstacle
+            triggerObstacleEncounter(obs) {
                 const needed = obs.type === 'LIFT' ? this.player.lift : this.player.reach;
                 const typeName = obs.type;
                 
-                // Logic: Can they pay?
                 let html = `<h3>🛑 Obstacle: ${obs.name}</h3>`;
                 html += `<p>Severity: Level ${obs.severity} (${obs.type})</p>`;
                 html += `<p>Cost: <b>${obs.cost} ${typeName}</b>. You have: ${needed}.</p>`;
                 
                 let buttons = '';
-                
-                // Pay Option
                 if (needed >= obs.cost) {
                     buttons += `<button class="btn btn-green" onclick="game.resolveObstacle('PAY', ${obs.cost}, '${obs.type}')">PAY & PASS (100% Safe)</button>`;
                 }
                 
-                // Risk Option
-                // Risk Target: Green(3+), Amber(4+), Red(5+)
                 const riskTarget = obs.severity + 2; 
                 buttons += `<button class="btn btn-red" onclick="game.resolveObstacle('RISK', 0, null, ${riskTarget})">RISK IT (Roll ${riskTarget}+)</button>`;
-
                 document.getElementById('controls-area').innerHTML = html + buttons;
             }
 
@@ -347,19 +306,15 @@ HTML
                 if (method === 'PAY') {
                     if (type === 'LIFT') this.player.lift -= cost;
                     else this.player.reach -= cost;
-                    
-                    // Success - Move past (+1)
                     this.player.pos += 1;
                     renderControls("RESULT", "Cleared safely!", 0);
                 } else {
-                    // Risk Roll
                     const roll = Math.ceil(Math.random() * 6);
                     if (roll >= target) {
                         this.player.pos += 1;
                         renderControls("RESULT", `RISK SUCCESS! Rolled ${roll} (Needed ${target}+).`, 0);
                     } else {
-                        // FAIL
-                        const penalty = -2; // Knock back
+                        const penalty = -2; 
                         this.player.pos = Math.max(0, this.player.pos + penalty);
                         renderControls("RESULT", `CRASH! Rolled ${roll}. Knocked back 2 spaces.`, 0);
                     }
@@ -369,7 +324,6 @@ HTML
             }
 
             applyPenalty(reason) {
-                // Move 1, Gain 1 Random
                 this.player.pos += 1;
                 const r = Math.random() > 0.5 ? "LIFT" : "REACH";
                 this.gainResource(r);
@@ -394,7 +348,6 @@ HTML
                         this.player.lift = 0;
                         this.player.reach = 0;
                         this.lap++;
-                        // Add Harder Obstacles for Lap 2? (Pos 30 = Tile 5)
                         OBSTACLES[5] = { name: "The High Wall", type: "LIFT", severity: 3, cost: 3 };
                     }
                 }
@@ -403,39 +356,26 @@ HTML
             renderBoard() {
                 const grid = document.getElementById('track-grid');
                 grid.innerHTML = '';
-                
-                // Create 25 tiles
                 for(let i=1; i<=TRACK_LENGTH; i++) {
                     const div = document.createElement('div');
                     div.className = 'tile';
                     div.innerText = i;
-                    
-                    // Add Obstacle Markers
                     if(OBSTACLES[i]) {
                         div.classList.add('obstacle');
                         if(OBSTACLES[i].severity === 1) div.classList.add('obs-green');
                         if(OBSTACLES[i].severity === 2) div.classList.add('obs-amber');
                         if(OBSTACLES[i].severity === 3) div.classList.add('obs-red');
-                        
-                        // Icons
                         const icon = OBSTACLES[i].type === 'LIFT' ? '🚧' : '🌊';
-                        div.innerHTML += `<div class="tile-icon">${icon}</div>`;
-                        div.innerHTML += `<div class="tile-cost">${OBSTACLES[i].cost}</div>`;
+                        div.innerHTML += `<div class="tile-icon">${icon}</div><div class="tile-cost">${OBSTACLES[i].cost}</div>`;
                     }
-
-                    // Add Player
-                    // Calculate visual position (Lap logic)
                     const visualPos = this.player.pos % TRACK_LENGTH;
-                    // Handle "Just crossed line" visual (0 vs 25)
                     let pPos = visualPos === 0 && this.player.pos > 0 ? 25 : visualPos;
-
                     if (i === pPos) {
                         const token = document.createElement('div');
                         token.className = 'token token-p1';
                         token.innerText = '🏇';
                         div.appendChild(token);
                     }
-                    
                     grid.appendChild(div);
                 }
             }
@@ -447,29 +387,23 @@ HTML
                 if (type === 'Easy') {
                     this.name = "The Tactician";
                     this.timer = 15;
-                    this.bias = [1,2,3,4]; // 1-4 = Lift
+                    this.bias = [1,2,3,4]; 
                 } else if (type === 'Medium') {
                     this.name = "The Veteran";
                     this.timer = 20;
-                    this.bias = [1,2,3]; // 1-3 = Lift
+                    this.bias = [1,2,3]; 
                 } else {
                     this.name = "The Daredevil";
                     this.timer = 25;
-                    this.bias = [1,2]; // 1-2 = Lift
+                    this.bias = [1,2]; 
                 }
             }
-            
-            getBias(roll) {
-                return this.bias.includes(roll) ? "LIFT" : "REACH";
-            }
+            getBias(roll) { return this.bias.includes(roll) ? "LIFT" : "REACH"; }
         }
 
-        // --- UI & PARSING ---
         const game = new Game();
 
-        function startGame(type) {
-            game.init(type);
-        }
+        function startGame(type) { game.init(type); }
 
         function updateUI() {
             document.getElementById('res-lift-count').innerText = game.player.lift;
@@ -480,36 +414,27 @@ HTML
         function renderControls(state, msg = "", delay = 0) {
             const area = document.getElementById('controls-area');
             area.innerHTML = '';
-
             if (state === "CHOOSE_STANCE") {
                 area.innerHTML = `
                     <p><b>Correct! Choose your Stance:</b></p>
-                    <button class="btn btn-action" onclick="game.executeAction('SPRINT')">⚡ SPRINT (Max Speed, No Resources)</button>
-                    <button class="btn btn-action" onclick="game.executeAction('GATHER')">🎒 GATHER (Max Resources, No Move)</button>
-                    <button class="btn btn-action" style="background:#f1c40f; color:#333;" onclick="game.executeAction('CANTER')">⚖️ CANTER (Balanced)</button>
+                    <button class="btn btn-action" onclick="game.executeAction('SPRINT')">⚡ SPRINT (Max Speed)</button>
+                    <button class="btn btn-action" onclick="game.executeAction('GATHER')">🎒 GATHER (Max Resources)</button>
+                    <button class="btn btn-warning" onclick="game.executeAction('CANTER')">⚖️ CANTER (Balanced)</button>
                 `;
             } else if (state === "RESULT") {
                 area.innerHTML = `<p>${msg}</p>`;
-                setTimeout(() => {
-                    // Computer Turn would go here
-                    // Then back to Question
-                    game.startTurn();
-                }, 2000); // 2 second delay to read result
+                setTimeout(() => { game.startTurn(); }, 2000); 
             }
         }
 
-        // --- MODAL LOGIC ---
         let timerInterval;
-
         function showQuestionModal(qObj, seconds, callback) {
             const modal = document.getElementById('modal-overlay');
             const fill = document.getElementById('timer-fill');
-            
             modal.classList.remove('hidden');
             document.getElementById('modal-title').innerText = `${qObj.difficulty} Question`;
             document.getElementById('modal-text').innerText = qObj.text;
             
-            // Randomize Options
             const opts = [
                 { txt: qObj.correct, isCorrect: true },
                 { txt: qObj.d1, isCorrect: false },
@@ -518,7 +443,6 @@ HTML
 
             const optContainer = document.getElementById('modal-options');
             optContainer.innerHTML = '';
-            
             opts.forEach(opt => {
                 const btn = document.createElement('button');
                 btn.className = 'btn answer-btn';
@@ -531,11 +455,8 @@ HTML
                 optContainer.appendChild(btn);
             });
 
-            // Start Timer
             fill.style.width = '100%';
-            fill.style.transition = 'none'; // Reset
-            
-            // Allow redraw
+            fill.style.transition = 'none'; 
             setTimeout(() => {
                 fill.style.transition = `width ${seconds}s linear`;
                 fill.style.width = '0%';
@@ -547,45 +468,50 @@ HTML
                 if(timeLeft <= 0) {
                     clearInterval(timerInterval);
                     modal.classList.add('hidden');
-                    callback(false); // Timeout treated as wrong
+                    callback(false); 
                 }
             }, 1000);
         }
 
-        // --- CSV PARSER ---
-        document.getElementById('csv-upload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const rows = text.split('\n').slice(1); // Skip header
-                const parsed = [];
-                
-                rows.forEach((row, index) => {
-                    // Simple CSV split (Note: fails on commas inside quotes, but fine for prototype)
-                    const cols = row.split(','); 
-                    if(cols.length >= 6) {
-                        parsed.push({
-                            id: index,
-                            difficulty: cols[1].trim(), // Col 1 is Difficulty
-                            text: cols[2].trim(),
-                            correct: cols[3].trim(),
-                            d1: cols[4].trim(),
-                            d2: cols[5].trim()
-                        });
+        // --- AUTOMATIC LOADING LOGIC ---
+        window.onload = function() {
+            fetch(CSV_FILENAME)
+                .then(response => {
+                    if (!response.ok) throw new Error("File not found");
+                    return response.text();
+                })
+                .then(text => {
+                    const rows = text.split('\n').slice(1);
+                    const parsed = [];
+                    rows.forEach((row, index) => {
+                        const cols = row.split(','); // Basic CSV parsing
+                        if(cols.length >= 6) {
+                            parsed.push({
+                                id: index,
+                                difficulty: cols[1].trim(),
+                                text: cols[2].trim(),
+                                correct: cols[3].trim(),
+                                d1: cols[4].trim(),
+                                d2: cols[5].trim()
+                            });
+                        }
+                    });
+                    if (parsed.length > 0) {
+                        QUESTION_DB = parsed;
+                        document.getElementById('deck-status').innerText = `✅ Loaded ${parsed.length} questions from ${CSV_FILENAME}`;
+                        document.getElementById('deck-status').style.color = 'green';
                     }
+                })
+                .catch(err => {
+                    console.warn("Fetch failed (probably CORS or missing file). Using Demo Data.", err);
+                    document.getElementById('deck-status').innerText = `⚠️ Could not load CSV (using Demo Data). Ensure file is present and running on a server.`;
+                    document.getElementById('deck-status').style.color = 'orange';
+                })
+                .finally(() => {
+                    document.getElementById('loading-area').classList.add('hidden');
+                    document.getElementById('selection-area').classList.remove('hidden');
                 });
-                
-                if (parsed.length > 0) {
-                    QUESTION_DB = parsed;
-                    alert(`Loaded ${parsed.length} questions!`);
-                }
-            };
-            reader.readAsText(file);
-        });
-
+        };
     </script>
 </body>
 </html>
