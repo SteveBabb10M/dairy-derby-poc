@@ -1,11 +1,9 @@
-HTML
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steeplechase Arena v5</title>
+    <title>Steeplechase Arena v8 (GitHub Ready)</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -127,7 +125,7 @@ HTML
 
     <div id="start-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center;">
         <h1>🏇 Steeplechase Arena</h1>
-        <div id="loading-area"><div class="loader"></div><p>Loading Question Deck...</p></div>
+        <div id="loading-area"><div class="loader"></div><p id="loading-text">Loading Question Deck...</p></div>
         <div id="selection-area" class="hidden" style="text-align:center;">
             <h3>Select Your Strategy</h3>
             <div style="display:flex; gap:10px;">
@@ -135,7 +133,7 @@ HTML
                 <button class="btn btn-warn" onclick="startGame('Medium')">Medium<br><small>The Veteran</small></button>
                 <button class="btn btn-red" onclick="startGame('Hard')">Hard<br><small>The Daredevil</small></button>
             </div>
-            <p id="deck-status" style="margin-top:15px; font-size:0.8em; color:#888;"></p>
+            <p id="deck-status" style="margin-top:15px; font-size:0.8em; color:green;"></p>
         </div>
     </div>
 
@@ -173,13 +171,16 @@ HTML
         // --- CONFIG ---
         const TRACK_SIZE = 50; 
         const LAPS = 2;
-        const CSV_FILE = 'A_Level_Law_Question_Deck.csv';
         const ACTION_LIMIT = 60; // Seconds
+        
+        // IMPORTANT: If this file is in the same repo as the HTML, this works on GitHub Pages.
+        // If testing locally, you might need a local server or the full https://raw.github... URL.
+        const CSV_FILE = 'A_Level_Law_Question_Deck.csv';
 
         // --- STATE ---
+        // Fallback Data (In case CSV fails to load)
         let DB = [
-            { id:1, difficulty:'Easy', text:'DEMO: What is Law?', correct:'Rules enforced by state', d1:'Opinions', d2:'Customs' },
-            { id:3, difficulty:'Hard', text:'DEMO: Donoghue v Stevenson?', correct:'Duty of care', d1:'Contract law', d2:'Criminal intent' }
+            { id:1, difficulty:'Easy', text:'DEMO: What is Law?', correct:'Rules enforced by state', d1:'Opinions', d2:'Customs' }
         ];
         
         const OBSTACLES = {
@@ -214,14 +215,12 @@ HTML
                 this.stopTimer();
                 this.updateUI();
                 
-                // If Blocked, show context
                 let msg = this.player.blockedBy ? 
                     `🛑 <b>STUCK AT OBSTACLE!</b><br>Answer correctly to make your move.` : 
                     `🏁 <b>NEW TURN</b><br>Answer to unlock dice.`;
 
                 this.renderAction("MSG", msg);
 
-                // Delay slightly for effect then ask question
                 setTimeout(() => {
                     const q = this.getQuestion();
                     showModal(q, this.player.jockey.qTimer, (success) => {
@@ -238,15 +237,11 @@ HTML
                 this.startTimer();
                 
                 if (this.player.blockedBy) {
-                    // Show Obstacle Options
                     this.renderObstacleOptions(this.player.blockedBy);
                 } else {
-                    // Show Movement Options
                     this.renderAction("STANCE");
                 }
             }
-
-            // --- CORE ACTIONS ---
 
             executeMove(type) {
                 const r1 = roll();
@@ -267,27 +262,22 @@ HTML
                     res = this.player.jockey.bias(r2);
                 }
 
-                // Hard Jockey Stumble
                 if (this.player.jockey.diff === 'Hard' && r1 <= 2 && type !== 'GATHER') {
                     this.endPhase(`❌ STUMBLE!<br>Red die rolled ${r1}. No Move.`);
                     return;
                 }
 
-                // Move Logic
                 const start = this.player.pos;
                 const target = start + move;
                 
-                // Collision Check
                 for(let i = start + 1; i <= target; i++) {
                     let tileIdx = i % TRACK_SIZE;
                     if (tileIdx === 0) tileIdx = TRACK_SIZE;
 
                     if (OBSTACLES[tileIdx]) {
-                        this.player.pos = i - 1; // Stop BEFORE
-                        this.player.blockedBy = OBSTACLES[tileIdx]; // Set Blocked Flag
+                        this.player.pos = i - 1; 
+                        this.player.blockedBy = OBSTACLES[tileIdx]; 
                         this.moveToken();
-                        
-                        // Immediately trigger the Obstacle Interface
                         this.renderObstacleOptions(OBSTACLES[tileIdx]);
                         return; 
                     }
@@ -302,24 +292,18 @@ HTML
                 this.endPhase(msg);
             }
 
-            // --- OBSTACLE LOGIC ---
-
             renderObstacleOptions(obs) {
                 const type = obs.type;
                 const have = type === 'LIFT' ? this.player.lift : this.player.reach;
                 const need = obs.cost;
                 const diff = Math.max(0, need - have);
-                
-                // Probability Calc
-                const riskTarget = obs.severity + 2; // 3, 4, 5
-                // Chance = (Sides >= Target) / 6
+                const riskTarget = obs.severity + 2; 
                 const winSides = 7 - riskTarget;
                 const winPct = Math.round((winSides / 6) * 100);
 
                 let html = `<h3 style="margin:0; color:var(--danger)">🛑 ${obs.name}</h3>`;
                 html += `<p style="font-size:0.9em; margin:5px;"><b>${obs.type}</b> (Level ${obs.severity})</p>`;
                 
-                // Status Box
                 html += `<div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:10px; text-align:left; font-size:0.9em;">`;
                 html += `Cost: <b>${need}</b>. You have: <b>${have}</b>.<br>`;
                 
@@ -331,14 +315,12 @@ HTML
                 }
                 html += `</div>`;
 
-                // Buttons
                 if (diff === 0) {
                     html += `<button class="btn btn-green" onclick="game.resolveObs('PAY', ${need}, '${type}')">💸 PAY & PASS (100% Safe)</button>`;
                 } else {
                     html += `<button class="btn btn-red" onclick="game.resolveObs('RISK', 0, null, ${riskTarget})">🎲 RISK IT (${winPct}%)</button>`;
                 }
                 
-                // THE NEW BUTTON: WAIT & GATHER
                 html += `<button class="btn btn-purple" onclick="game.obstacleGather()">🎒 WAIT & GATHER RESOURCES</button>`;
                 html += `<p style="font-size:0.8em; color:#666;">Waiting builds resources but costs a turn.</p>`;
 
@@ -350,7 +332,6 @@ HTML
                 const r2 = roll();
                 this.gain(this.player.jockey.bias(r1));
                 this.gain(this.player.jockey.bias(r2));
-                // Player stays blocked!
                 this.endPhase(`💤 <b>WAITED.</b><br>Rolled ${r1} & ${r2}.<br>Gained 2 Resources.`);
             }
 
@@ -364,12 +345,8 @@ HTML
                     if (r >= target) {
                         this.passObstacle(true, `🎲 RISK SUCCESS!<br>Rolled ${r} (Needed ${target}+).`);
                     } else {
-                        // Fail
-                        this.player.pos = Math.max(0, this.player.pos - 2); // Knockback
+                        this.player.pos = Math.max(0, this.player.pos - 2); 
                         this.moveToken();
-                        // UNBLOCK them so they have to approach again? Or keep blocked?
-                        // Usually steeplechase refusal means you are still at the fence.
-                        // But knocking back 2 spaces clears the "blocked" flag logic naturally because pos changed.
                         this.player.blockedBy = null; 
                         this.endPhase(`💥 CRASH! Rolled ${r}.<br>Knocked back 2 spaces.`);
                     }
@@ -378,14 +355,12 @@ HTML
 
             passObstacle(success, msg) {
                 if(success) {
-                    this.player.pos += 1; // Move past
-                    this.player.blockedBy = null; // Clear block
+                    this.player.pos += 1; 
+                    this.player.blockedBy = null; 
                     this.moveToken();
                     this.endPhase(msg);
                 }
             }
-
-            // --- UTILS ---
 
             penalty(reason) {
                 this.player.pos += 1; 
@@ -423,33 +398,16 @@ HTML
                 }
             }
 
-            // --- RENDERERS ---
-
             renderTrack() {
                 const arena = document.getElementById('arena-container');
-                // Clean existing tiles if any (except center hub)
                 Array.from(document.getElementsByClassName('tile')).forEach(e => e.remove());
                 Array.from(document.getElementsByClassName('token')).forEach(e => e.remove());
 
-                // Generate 50 tiles in a square loop
-                // 14x14 Grid. 
-                // Top: Row 1, Col 1-13
-                // Right: Col 14, Row 1-13
-                // Bottom: Row 14, Col 14-2
-                // Left: Col 1, Row 14-2
-                
                 const coords = [];
-                // Top side (L->R)
-                for(let c=1; c<=13; c++) coords.push({r:1, c:c});
-                // Right side (T->B)
-                for(let r=1; r<=13; r++) coords.push({r:r, c:14});
-                // Bottom side (R->L)
-                for(let c=14; c>=2; c--) coords.push({r:14, c:c});
-                // Left side (B->T)
-                for(let r=14; r>=2; r--) coords.push({r:r, c:1});
-
-                // coords now has 52 positions. We only need 50.
-                // Steeplechase isn't perfect geometry. We map 1-50 to these.
+                for(let c=1; c<=13; c++) coords.push({r:1, c:c}); 
+                for(let r=1; r<=13; r++) coords.push({r:r, c:14}); 
+                for(let c=14; c>=2; c--) coords.push({r:14, c:c}); 
+                for(let r=14; r>=2; r--) coords.push({r:r, c:1}); 
 
                 for(let i=1; i<=TRACK_SIZE; i++) {
                     const div = document.createElement('div');
@@ -457,7 +415,6 @@ HTML
                     div.id = `tile-${i}`;
                     div.style.gridRow = coords[i-1].r;
                     div.style.gridColumn = coords[i-1].c;
-                    
                     div.innerHTML = `<span class="tile-number">${i}</span>`;
 
                     if(OBSTACLES[i]) {
@@ -471,7 +428,6 @@ HTML
                     arena.appendChild(div);
                 }
 
-                // Add Token
                 const t = document.createElement('div');
                 t.id = 'p1-token';
                 t.className = 'token token-p1';
@@ -484,22 +440,15 @@ HTML
                 const t = document.getElementById('p1-token');
                 let visPos = this.player.pos % TRACK_SIZE;
                 if(visPos === 0 && this.player.pos > 0) visPos = TRACK_SIZE;
-                if(visPos === 0) visPos = 1; // Start
+                if(visPos === 0) visPos = 1; 
                 
                 const tile = document.getElementById(`tile-${visPos}`);
                 if(tile) {
-                    // Center token on tile
-                    const rect = tile.getBoundingClientRect();
-                    const arenaRect = document.getElementById('arena-container').getBoundingClientRect();
-                    
-                    // Simple centering via Grid placement? No, safer to match tile grid props
                     t.style.gridRow = tile.style.gridRow;
                     t.style.gridColumn = tile.style.gridColumn;
-                    
-                    // Center within the grid cell using margin auto
                     t.style.margin = "auto";
                     t.style.position = "relative"; 
-                    tile.appendChild(t); // Physically move DOM element to tile
+                    tile.appendChild(t); 
                 }
             }
 
@@ -527,7 +476,6 @@ HTML
                 document.getElementById('ui-lap').innerText = `Lap ${this.lap} / ${LAPS}`;
             }
 
-            // --- TIMERS ---
             startTimer() {
                 this.stopTimer();
                 this.timeLeft = ACTION_LIMIT;
@@ -540,7 +488,7 @@ HTML
                     el.innerText = this.timeLeft + "s";
                     if(this.timeLeft <= 0) {
                         this.stopTimer();
-                        alert("⏳ TIME UP! Auto-Risking/Cantering.");
+                        alert("⏳ TIME UP!");
                         if(this.player.blockedBy) {
                             const t = this.player.blockedBy.severity + 2;
                             this.resolveObs('RISK',0,null,t);
@@ -556,7 +504,6 @@ HTML
                 document.getElementById('turn-timer').classList.add('hidden');
             }
 
-            // --- Q HANDLER ---
             getQuestion() {
                 const diff = this.player.jockey.diff;
                 let pool = DB.filter(q => q.difficulty === diff);
@@ -565,7 +512,6 @@ HTML
             }
         }
 
-        // --- JOCKEY CLASS ---
         class Jockey {
             constructor(t) {
                 this.diff = t;
@@ -576,12 +522,10 @@ HTML
             bias(r) { return this.biasArr.includes(r) ? 'LIFT' : 'REACH'; }
         }
 
-        // --- GLOBAL & INIT ---
         const game = new Game();
         function startGame(t) { game.init(t); }
         function roll() { return Math.ceil(Math.random()*6); }
 
-        // --- MODAL ---
         let qInterval;
         function showModal(q, sec, cb) {
             const m = document.getElementById('modal-overlay');
@@ -595,7 +539,7 @@ HTML
             
             opts.forEach(o => {
                 const b = document.createElement('div');
-                b.className = 'opt-btn'; b.innerText = o.t;
+                b.className = 'opt-btn'; b.innerText = o.t.replace(/"/g, ''); 
                 b.onclick = () => { end(o.v); };
                 c.appendChild(b);
             });
@@ -614,18 +558,45 @@ HTML
             }
         }
 
-        // --- CSV LOAD ---
+        // --- FETCH CSV ---
         window.onload = function() {
-            fetch(CSV_FILE).then(r=>r.ok?r.text():null).then(t=>{
-                if(!t) return;
-                const rows=t.split('\n').slice(1);
-                const p=[];
-                rows.forEach((r,i)=>{
-                    const c=r.split(',');
-                    if(c.length>=6) p.push({id:i, difficulty:c[1].trim(), text:c[2].trim(), correct:c[3].trim(), d1:c[4].trim(), d2:c[5].trim()});
+            fetch(CSV_FILE).then(r => {
+                if(!r.ok) throw new Error("File not found");
+                return r.text();
+            }).then(text => {
+                const rows = text.split('\n').slice(1);
+                const parsed = [];
+                // REGEX: Split by comma but IGNORE commas inside quotes
+                const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+
+                rows.forEach((row, i) => {
+                    const cols = row.split(regex); 
+                    if(cols.length >= 6) {
+                        parsed.push({
+                            id: i, 
+                            difficulty: cols[1].trim(), 
+                            text: cols[2].trim().replace(/^"|"$/g, ''), // Clean quotes 
+                            correct: cols[3].trim().replace(/^"|"$/g, ''), 
+                            d1: cols[4].trim().replace(/^"|"$/g, ''), 
+                            d2: cols[5].trim().replace(/^"|"$/g, '')
+                        });
+                    }
                 });
-                if(p.length) { DB=p; document.getElementById('deck-status').innerText=`✅ Loaded ${p.length} Qs`; }
-            }).catch(e=>console.log(e));
+                
+                if(parsed.length) { 
+                    DB = parsed; 
+                    document.getElementById('deck-status').innerText = `✅ Loaded ${parsed.length} Questions from File`;
+                }
+            }).catch(e => {
+                console.warn(e);
+                document.getElementById('deck-status').innerText = `⚠️ Using Demo Data (Make sure this file is on GitHub)`;
+                document.getElementById('loading-text').innerText = "Game Ready (Local Mode)";
+                document.getElementById('loading-area').classList.add('hidden');
+                document.getElementById('selection-area').classList.remove('hidden');
+            }).finally(() => {
+                document.getElementById('loading-area').classList.add('hidden');
+                document.getElementById('selection-area').classList.remove('hidden');
+            });
         };
 
     </script>
