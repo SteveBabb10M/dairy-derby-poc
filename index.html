@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steeplechase Learning Platform</title>
+    <title>Steeplechase Learning Platform v4</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -17,18 +17,17 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f3; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; }
         
         /* LAYOUT */
-        #game-container { display: flex; flex: 1; gap: 20px; max-width: 1400px; margin: 0 auto; width: 100%; }
+        #game-container { display: flex; flex: 1; gap: 20px; max-width: 1600px; margin: 0 auto; width: 100%; }
         #sidebar { flex: 0 0 350px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 20px; }
         #main-view { flex: 1; display: flex; flex-direction: column; gap: 20px; }
 
         /* TRACK VISUALS */
-        #track-container { flex: 1; background: var(--track-color); border-radius: 12px; border: 8px solid #5d6d3d; position: relative; overflow: hidden; }
+        #track-container { flex: 1; background: var(--track-color); border-radius: 12px; border: 8px solid #5d6d3d; position: relative; overflow: hidden; padding: 10px;}
         .track-path {
             display: grid;
-            grid-template-columns: repeat(9, 1fr); /* Oval shape approximation */
-            grid-template-rows: repeat(5, 1fr);
-            gap: 8px;
-            padding: 20px;
+            grid-template-columns: repeat(10, 1fr); /* 10 Columns */
+            grid-template-rows: repeat(5, 1fr);    /* 5 Rows = 50 Tiles */
+            gap: 6px;
             height: 100%;
             box-sizing: border-box;
         }
@@ -41,7 +40,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 12px;
+            font-size: 14px;
             color: #555;
             font-weight: bold;
         }
@@ -52,59 +51,52 @@
         .obs-amber { border-color: var(--warning); background: #fef9e7; }
         .obs-red { border-color: var(--danger); background: #fdedec; }
         
-        .tile-icon { font-size: 24px; }
+        .tile-icon { font-size: 20px; position: absolute; top: 2px; right: 2px; }
         .tile-cost { position: absolute; bottom: 2px; right: 2px; font-size: 10px; background: #333; color: white; padding: 2px 4px; border-radius: 4px; }
 
         /* PLAYERS */
         .token {
-            width: 30px; height: 30px; border-radius: 50%; border: 2px solid white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3); position: absolute; transition: all 0.5s ease;
-            z-index: 10; display: flex; justify-content: center; align-items: center; font-size: 16px;
+            width: 32px; height: 32px; border-radius: 50%; border: 3px solid white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4); position: absolute; transition: all 0.5s ease;
+            z-index: 10; display: flex; justify-content: center; align-items: center; font-size: 18px;
         }
-        .token-p1 { background: #3498db; transform: translate(-5px, -5px); } /* Blue Horse */
-        .token-cpu { background: #95a5a6; transform: translate(5px, 5px); } /* Grey Horse */
-        .stumbled { opacity: 0.5; filter: grayscale(100%); }
-
-        /* UI ELEMENTS */
-        .card { background: var(--light); padding: 15px; border-radius: 8px; border-left: 5px solid var(--primary); }
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .resource-badge { display: inline-block; padding: 5px 10px; border-radius: 15px; color: white; font-weight: bold; font-size: 14px; margin-right: 5px; }
-        .res-lift { background-color: #9b59b6; } /* Purple for Lift */
-        .res-reach { background-color: #e67e22; } /* Orange for Reach */
-
-        /* CONTROLS */
-        .btn { border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: transform 0.1s; width: 100%; margin-bottom: 10px; color: white;}
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .token-p1 { background: #3498db; } 
         
-        .btn-action { background: var(--primary); font-size: 16px; }
+        /* CONTROLS */
+        .btn { border: none; padding: 15px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: transform 0.1s; width: 100%; margin-bottom: 10px; color: white; font-size: 16px;}
+        .btn:active { transform: scale(0.98); }
+        .btn-action { background: var(--primary); border-left: 5px solid #1a252f; text-align: left; }
         .btn-green { background: var(--accent); }
         .btn-red { background: var(--danger); }
         .btn-warning { background: var(--warning); color: #333; }
+        
+        .hidden { display: none !important; }
 
         /* MODALS */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: flex; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 30px; border-radius: 12px; width: 600px; max-width: 90%; text-align: center; position: relative; }
-        
         #timer-bar { height: 10px; background: #ddd; width: 100%; margin: 20px 0; border-radius: 5px; overflow: hidden; }
         #timer-fill { height: 100%; background: var(--accent); width: 100%; transition: width 0.1s linear; }
-
         .answer-btn { background: white; border: 2px solid var(--primary); color: var(--primary); margin: 10px 0; text-align: left; transition: all 0.2s; }
         .answer-btn:hover { background: var(--light); }
-
-        .hidden { display: none !important; }
-
-        /* DICE VISUALS */
-        .dice-display { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
-        .die { width: 50px; height: 50px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; color: white; }
-        .die-red { background: #e74c3c; }
-        .die-blue { background: #3498db; }
         
-        /* LOADING SPINNER */
+        /* UI ELEMENTS */
+        .card { background: var(--light); padding: 15px; border-radius: 8px; border-left: 5px solid var(--primary); }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .resource-badge { display: inline-block; padding: 5px 10px; border-radius: 15px; color: white; font-weight: bold; font-size: 14px; margin-right: 5px; }
+        .res-lift { background-color: #9b59b6; } 
+        .res-reach { background-color: #e67e22; } 
+        
         .loader {
             border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* NEW TIMER DISPLAY */
+        #turn-timer-display {
+            font-size: 1.2em; font-weight: bold; color: var(--danger); text-align: center; margin-bottom: 10px;
+            background: rgba(255,255,255,0.5); padding: 5px; border-radius: 4px;
+        }
 
     </style>
 </head>
@@ -145,12 +137,12 @@
                     <span class="resource-badge res-lift">LIFT: <span id="res-lift-count">0</span></span>
                     <span class="resource-badge res-reach">REACH: <span id="res-reach-count">0</span></span>
                 </div>
-                <p style="font-size: 0.8em; color: #666;">Used to buy past obstacles.</p>
+                <p style="font-size: 0.8em; color: #666;">Use Lift for Fences 🚧 | Reach for Water 🌊</p>
             </div>
 
             <div id="action-panel">
                 <h3>Actions</h3>
-                <p id="turn-status">Waiting for Question...</p>
+                <div id="turn-timer-display" class="hidden">⏱️ 60s</div>
                 <div id="controls-area"></div>
             </div>
         </div>
@@ -167,7 +159,7 @@
         <div class="modal-content">
             <h2 id="modal-title">Question</h2>
             <div id="timer-bar"><div id="timer-fill"></div></div>
-            <p id="modal-text" style="font-size: 1.2em; margin-bottom: 20px;">Question text goes here...</p>
+            <p id="modal-text" style="font-size: 1.2em; margin-bottom: 20px;">Question...</p>
             <div id="modal-options" style="display: flex; flex-direction: column;">
                 </div>
         </div>
@@ -175,24 +167,25 @@
 
     <script>
         // --- DATA & CONFIG ---
-        const TRACK_LENGTH = 25;
+        const TRACK_LENGTH = 50; 
         const TOTAL_LAPS = 2;
         const CSV_FILENAME = 'A_Level_Law_Question_Deck.csv'; 
-        
-        // Mock Data (Fallback if fetch fails or running locally without server)
+        const ACTION_TIME_LIMIT = 60; // 60 Seconds for the Action Phase
+
         let QUESTION_DB = [
             { id: 1, difficulty: 'Easy', text: "DEMO: What is meant by law?", correct: "Rules enforced by state", d1: "Moral opinions", d2: "Social customs" },
             { id: 2, difficulty: 'Easy', text: "DEMO: Standard of proof in criminal cases?", correct: "Beyond reasonable doubt", d1: "Balance of probabilities", d2: "Absolute certainty" },
-            { id: 3, difficulty: 'Hard', text: "DEMO: Donoghue v Stevenson established duty of care for:", correct: "Manufacturers to consumers", d1: "Employers to employees", d2: "Doctors to patients" },
-            { id: 4, difficulty: 'Medium', text: "DEMO: What is a Tort?", correct: "A civil wrong", d1: "A criminal offence", d2: "A type of contract" }
+            { id: 3, difficulty: 'Hard', text: "DEMO: Donoghue v Stevenson established duty of care for:", correct: "Manufacturers to consumers", d1: "Employers to employees", d2: "Doctors to patients" }
         ];
 
-        // Obstacle Map
         const OBSTACLES = {
             6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 1 },
-            12: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 1 },
-            18: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 2 },
-            24: { name: "Open Water",   type: "REACH", severity: 2, cost: 2 },
+            13: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 1 },
+            20: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 2 },
+            27: { name: "Open Water",   type: "REACH", severity: 2, cost: 2 },
+            34: { name: "Double Hedge", type: "LIFT",  severity: 2, cost: 2 },
+            41: { name: "The Grand Canyon", type: "REACH", severity: 3, cost: 3 }, 
+            48: { name: "The High Wall",    type: "LIFT",  severity: 3, cost: 3 }, 
         };
 
         // --- GAME ENGINE ---
@@ -200,38 +193,93 @@
             constructor() {
                 this.lap = 1;
                 this.player = { pos: 0, lift: 0, reach: 0, jockey: null };
-                this.state = 'SETUP'; 
+                this.actionTimer = null;
+                this.timeLeft = 0;
+                this.currentObstacleContext = null; // Store context for auto-move
             }
 
             init(jockeyType) {
                 this.player.jockey = new Jockey(jockeyType);
-                this.state = 'QUESTION';
-                
                 document.getElementById('start-screen').classList.add('hidden');
                 document.getElementById('game-container').classList.remove('hidden');
                 document.getElementById('ui-jockey').innerText = `${this.player.jockey.name} (${jockeyType})`;
-                
                 this.renderBoard();
                 this.startTurn();
             }
 
             startTurn() {
+                this.stopActionTimer(); // Clean up previous
                 updateUI();
+                renderControls("WAITING", "Answer the question to unlock dice...");
+                
                 const q = this.getQuestion();
                 showQuestionModal(q, this.player.jockey.timer, (success) => {
                     if (success) {
-                        this.state = 'ACTION';
-                        renderControls("CHOOSE_STANCE");
+                        this.startActionPhase();
                     } else {
                         this.applyPenalty("Incorrect or Timeout!");
                     }
                 });
             }
 
+            startActionPhase() {
+                // Start the 60s Timer
+                this.startActionTimer();
+                renderControls("CHOOSE_STANCE");
+            }
+
+            startActionTimer() {
+                this.stopActionTimer();
+                this.timeLeft = ACTION_TIME_LIMIT;
+                const display = document.getElementById('turn-timer-display');
+                display.classList.remove('hidden');
+                display.innerText = `⏱️ ${this.timeLeft}s`;
+
+                this.actionTimer = setInterval(() => {
+                    this.timeLeft--;
+                    display.innerText = `⏱️ ${this.timeLeft}s`;
+                    
+                    if (this.timeLeft <= 0) {
+                        this.handleActionTimeout();
+                    }
+                }, 1000);
+            }
+
+            stopActionTimer() {
+                if (this.actionTimer) clearInterval(this.actionTimer);
+                document.getElementById('turn-timer-display').classList.add('hidden');
+            }
+
+            handleActionTimeout() {
+                this.stopActionTimer();
+                // AUTO-MOVE LOGIC based on current state check
+                // We infer state from what controls are currently rendered or internal flags
+                
+                // If we are waiting for STANCE (controls has executeAction buttons)
+                const controls = document.getElementById('controls-area').innerHTML;
+                
+                if (controls.includes('CHOOSE_STANCE') || controls.includes('SPRINT')) {
+                    // Default to CANTER (Safe)
+                    alert("⏳ Time's Up! Auto-selecting CANTER.");
+                    this.executeAction('CANTER');
+                } 
+                else if (this.currentObstacleContext) {
+                    // We are stuck at an obstacle. Default to RISK.
+                    alert("⏳ Time's Up! Forced to RISK IT.");
+                    const ctx = this.currentObstacleContext;
+                    this.resolveObstacle('RISK', 0, null, ctx.riskTarget);
+                }
+                else {
+                    // We are likely at the RESULT screen waiting for Next Turn
+                    // Or stuck in a weird state. Just force next turn.
+                    this.startTurn();
+                }
+            }
+
             getQuestion() {
                 const diff = this.player.jockey.difficulty; 
                 let pool = QUESTION_DB.filter(q => q.difficulty === diff);
-                if (pool.length === 0) pool = QUESTION_DB; // Safety fallback
+                if (pool.length === 0) pool = QUESTION_DB; 
                 return pool[Math.floor(Math.random() * pool.length)];
             }
 
@@ -246,7 +294,7 @@
                 } else if (actionType === 'GATHER') {
                     this.gainResource(this.player.jockey.getBias(r1));
                     this.gainResource(this.player.jockey.getBias(r2));
-                    renderControls("RESULT", `Rolled ${r1}+${r2}. Gained 2 Resources!`, 0);
+                    renderControls("RESULT", `🎒 GATHERED! Rolled ${r1} & ${r2}. Gain 2 Resources. (No Move)`);
                     return; 
                 } else if (actionType === 'CANTER') {
                     move = r1;
@@ -255,18 +303,18 @@
                 }
 
                 if (this.player.jockey.difficulty === 'Hard' && r1 <= 2 && actionType !== 'GATHER') {
-                    move = 0;
-                    renderControls("RESULT", `HARD JOCKEY STUMBLE! Red Die was ${r1}. No Move.`, 0);
-                    return;
+                    renderControls("RESULT", `❌ STUMBLE! Hard Jockey rolled a ${r1}. No Movement.`);
+                    return; 
                 }
+
                 this.movePlayer(move, r1, r2, gainedResource);
             }
 
             movePlayer(steps, d1, d2, res) {
                 const start = this.player.pos;
                 let target = start + steps;
-                let msg = `Rolled Red:${d1} Blue:${d2}. Moving ${steps}.`;
-                if(res) msg += ` Gained ${res}.`;
+                let msg = `🎲 Rolled ${d1} & ${d2}. Moving ${steps}.`;
+                if(res) msg += ` +1 ${res}.`;
 
                 for(let i = start + 1; i <= target; i++) {
                     let tileIdx = i % TRACK_LENGTH;
@@ -274,49 +322,56 @@
 
                     if (OBSTACLES[tileIdx]) {
                         this.player.pos = i - 1; 
+                        this.renderBoard();
                         this.triggerObstacleEncounter(OBSTACLES[tileIdx], target - i);
-                        return;
+                        return; 
                     }
                 }
+
                 this.player.pos = target;
-                this.checkLap();
-                renderControls("RESULT", msg, 0);
                 this.renderBoard();
+                this.checkLap();
+                renderControls("RESULT", msg);
             }
 
             triggerObstacleEncounter(obs) {
                 const needed = obs.type === 'LIFT' ? this.player.lift : this.player.reach;
-                const typeName = obs.type;
-                
-                let html = `<h3>🛑 Obstacle: ${obs.name}</h3>`;
+                const riskTarget = obs.severity + 2; 
+
+                // Store context for Timer Auto-Move
+                this.currentObstacleContext = { obs: obs, riskTarget: riskTarget };
+
+                let html = `<h3>🛑 ${obs.name}</h3>`;
                 html += `<p>Severity: Level ${obs.severity} (${obs.type})</p>`;
-                html += `<p>Cost: <b>${obs.cost} ${typeName}</b>. You have: ${needed}.</p>`;
+                html += `<p>Cost: <b>${obs.cost} ${obs.type}</b>. You have: ${needed}.</p>`;
                 
                 let buttons = '';
                 if (needed >= obs.cost) {
-                    buttons += `<button class="btn btn-green" onclick="game.resolveObstacle('PAY', ${obs.cost}, '${obs.type}')">PAY & PASS (100% Safe)</button>`;
+                    buttons += `<button class="btn btn-green" onclick="game.resolveObstacle('PAY', ${obs.cost}, '${obs.type}')">PAY & PASS (Safe)</button>`;
                 }
                 
-                const riskTarget = obs.severity + 2; 
                 buttons += `<button class="btn btn-red" onclick="game.resolveObstacle('RISK', 0, null, ${riskTarget})">RISK IT (Roll ${riskTarget}+)</button>`;
+                
                 document.getElementById('controls-area').innerHTML = html + buttons;
             }
 
             resolveObstacle(method, cost, type, target) {
+                this.currentObstacleContext = null; // Clear context
+
                 if (method === 'PAY') {
                     if (type === 'LIFT') this.player.lift -= cost;
                     else this.player.reach -= cost;
-                    this.player.pos += 1;
-                    renderControls("RESULT", "Cleared safely!", 0);
+                    this.player.pos += 1; 
+                    renderControls("RESULT", "✅ PAID! Cleared safely.");
                 } else {
                     const roll = Math.ceil(Math.random() * 6);
                     if (roll >= target) {
-                        this.player.pos += 1;
-                        renderControls("RESULT", `RISK SUCCESS! Rolled ${roll} (Needed ${target}+).`, 0);
+                        this.player.pos += 1; 
+                        renderControls("RESULT", `🎲 SUCCESS! Rolled ${roll} (Needed ${target}+).`);
                     } else {
-                        const penalty = -2; 
-                        this.player.pos = Math.max(0, this.player.pos + penalty);
-                        renderControls("RESULT", `CRASH! Rolled ${roll}. Knocked back 2 spaces.`, 0);
+                        const penalty = 2; 
+                        this.player.pos = Math.max(0, this.player.pos - penalty);
+                        renderControls("RESULT", `💥 CRASH! Rolled ${roll}. Knocked back ${penalty} spaces.`);
                     }
                 }
                 updateUI();
@@ -324,11 +379,13 @@
             }
 
             applyPenalty(reason) {
-                this.player.pos += 1;
+                this.player.pos += 1; 
                 const r = Math.random() > 0.5 ? "LIFT" : "REACH";
                 this.gainResource(r);
                 this.checkLap();
-                renderControls("RESULT", `❌ ${reason}<br>Penalty: Crawl 1 space. Gained 1 ${r}.`, 0);
+                
+                // Show Penalty Result, THEN wait for Next Turn (using RESULT state)
+                renderControls("RESULT", `❌ ${reason}<br>Penalty: Crawl 1 space. Gained 1 ${r}.`);
                 this.renderBoard();
             }
 
@@ -339,7 +396,8 @@
             }
 
             checkLap() {
-                if (this.player.pos >= TRACK_LENGTH * this.lap) {
+                const distance = TRACK_LENGTH * this.lap;
+                if (this.player.pos >= distance) {
                     if (this.lap === TOTAL_LAPS) {
                         alert("🎉 FINISH LINE! YOU WIN!");
                         location.reload();
@@ -348,7 +406,6 @@
                         this.player.lift = 0;
                         this.player.reach = 0;
                         this.lap++;
-                        OBSTACLES[5] = { name: "The High Wall", type: "LIFT", severity: 3, cost: 3 };
                     }
                 }
             }
@@ -360,6 +417,7 @@
                     const div = document.createElement('div');
                     div.className = 'tile';
                     div.innerText = i;
+                    
                     if(OBSTACLES[i]) {
                         div.classList.add('obstacle');
                         if(OBSTACLES[i].severity === 1) div.classList.add('obs-green');
@@ -368,9 +426,11 @@
                         const icon = OBSTACLES[i].type === 'LIFT' ? '🚧' : '🌊';
                         div.innerHTML += `<div class="tile-icon">${icon}</div><div class="tile-cost">${OBSTACLES[i].cost}</div>`;
                     }
-                    const visualPos = this.player.pos % TRACK_LENGTH;
-                    let pPos = visualPos === 0 && this.player.pos > 0 ? 25 : visualPos;
-                    if (i === pPos) {
+
+                    let visualPos = this.player.pos % TRACK_LENGTH;
+                    if(visualPos === 0 && this.player.pos > 0) visualPos = 50; 
+
+                    if (i === visualPos) {
                         const token = document.createElement('div');
                         token.className = 'token token-p1';
                         token.innerText = '🏇';
@@ -404,26 +464,33 @@
         const game = new Game();
 
         function startGame(type) { game.init(type); }
-
         function updateUI() {
             document.getElementById('res-lift-count').innerText = game.player.lift;
             document.getElementById('res-reach-count').innerText = game.player.reach;
             document.getElementById('ui-lap').innerText = `${game.lap} / ${TOTAL_LAPS}`;
         }
 
-        function renderControls(state, msg = "", delay = 0) {
+        function renderControls(state, msg = "") {
             const area = document.getElementById('controls-area');
             area.innerHTML = '';
-            if (state === "CHOOSE_STANCE") {
+            
+            if (state === "WAITING") {
+                area.innerHTML = `<p>${msg}</p>`;
+            } 
+            else if (state === "CHOOSE_STANCE") {
                 area.innerHTML = `
-                    <p><b>Correct! Choose your Stance:</b></p>
+                    <p style="color:var(--accent);"><b>✅ Answer Correct!</b><br>Choose your Strategy:</p>
                     <button class="btn btn-action" onclick="game.executeAction('SPRINT')">⚡ SPRINT (Max Speed)</button>
                     <button class="btn btn-action" onclick="game.executeAction('GATHER')">🎒 GATHER (Max Resources)</button>
                     <button class="btn btn-warning" onclick="game.executeAction('CANTER')">⚖️ CANTER (Balanced)</button>
                 `;
-            } else if (state === "RESULT") {
-                area.innerHTML = `<p>${msg}</p>`;
-                setTimeout(() => { game.startTurn(); }, 2000); 
+            } 
+            else if (state === "RESULT") {
+                // MANUAL NEXT TURN BUTTON
+                area.innerHTML = `
+                    <p>${msg}</p>
+                    <button class="btn btn-action" style="background:#34495e; margin-top:20px;" onclick="game.startTurn()">➡️ NEXT TURN</button>
+                `;
             }
         }
 
@@ -432,6 +499,7 @@
             const modal = document.getElementById('modal-overlay');
             const fill = document.getElementById('timer-fill');
             modal.classList.remove('hidden');
+            
             document.getElementById('modal-title').innerText = `${qObj.difficulty} Question`;
             document.getElementById('modal-text').innerText = qObj.text;
             
@@ -443,6 +511,9 @@
 
             const optContainer = document.getElementById('modal-options');
             optContainer.innerHTML = '';
+            
+            if (timerInterval) clearInterval(timerInterval);
+
             opts.forEach(opt => {
                 const btn = document.createElement('button');
                 btn.className = 'btn answer-btn';
@@ -450,7 +521,7 @@
                 btn.onclick = () => {
                     clearInterval(timerInterval);
                     modal.classList.add('hidden');
-                    callback(opt.isCorrect);
+                    callback(opt.isCorrect); 
                 };
                 optContainer.appendChild(btn);
             });
@@ -473,7 +544,6 @@
             }, 1000);
         }
 
-        // --- AUTOMATIC LOADING LOGIC ---
         window.onload = function() {
             fetch(CSV_FILENAME)
                 .then(response => {
@@ -484,7 +554,7 @@
                     const rows = text.split('\n').slice(1);
                     const parsed = [];
                     rows.forEach((row, index) => {
-                        const cols = row.split(','); // Basic CSV parsing
+                        const cols = row.split(','); 
                         if(cols.length >= 6) {
                             parsed.push({
                                 id: index,
@@ -503,8 +573,8 @@
                     }
                 })
                 .catch(err => {
-                    console.warn("Fetch failed (probably CORS or missing file). Using Demo Data.", err);
-                    document.getElementById('deck-status').innerText = `⚠️ Could not load CSV (using Demo Data). Ensure file is present and running on a server.`;
+                    console.warn("Using Demo Data.", err);
+                    document.getElementById('deck-status').innerText = `⚠️ Using internal Demo Data.`;
                     document.getElementById('deck-status').style.color = 'orange';
                 })
                 .finally(() => {
