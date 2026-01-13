@@ -3,585 +3,629 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steeplechase Learning Platform v4</title>
+    <title>Steeplechase Arena v5</title>
     <style>
         :root {
             --primary: #2c3e50;
-            --accent: #27ae60; /* Green */
-            --warning: #f39c12; /* Amber */
-            --danger: #c0392b; /* Red */
+            --accent: #27ae60;
+            --warning: #f39c12;
+            --danger: #c0392b;
             --light: #ecf0f1;
-            --track-color: #8da35e;
+            --track: #95a5a6;
+            --grass: #8da35e;
         }
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f3; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #333; 
+            margin: 0; 
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden;
+        }
         
-        /* LAYOUT */
-        #game-container { display: flex; flex: 1; gap: 20px; max-width: 1600px; margin: 0 auto; width: 100%; }
-        #sidebar { flex: 0 0 350px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 20px; }
-        #main-view { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-
-        /* TRACK VISUALS */
-        #track-container { flex: 1; background: var(--track-color); border-radius: 12px; border: 8px solid #5d6d3d; position: relative; overflow: hidden; padding: 10px;}
-        .track-path {
+        /* THE ARENA LAYOUT (Grid) */
+        #arena-container {
             display: grid;
-            grid-template-columns: repeat(10, 1fr); /* 10 Columns */
-            grid-template-rows: repeat(5, 1fr);    /* 5 Rows = 50 Tiles */
-            gap: 6px;
-            height: 100%;
-            box-sizing: border-box;
-        }
-        
-        .tile {
-            background: rgba(255,255,255,0.8);
-            border-radius: 4px;
-            border: 2px solid rgba(0,0,0,0.1);
+            /* 14x14 Grid: Outer ring is track, inner 12x12 is UI */
+            grid-template-columns: repeat(14, 1fr);
+            grid-template-rows: repeat(14, 1fr);
+            width: 95vh;
+            height: 95vh;
+            background-color: var(--grass);
+            border: 10px solid #5d6d3d;
+            border-radius: 15px;
             position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        /* CENTER HUB (Interaction Area) */
+        #center-hub {
+            grid-column: 3 / 13;
+            grid-row: 3 / 13;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+            z-index: 5;
+            overflow-y: auto;
+        }
+
+        /* TRACK TILES */
+        .tile {
+            background: #e0e0e0;
+            border: 1px solid #999;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 14px;
-            color: #555;
+            font-size: 10px;
             font-weight: bold;
+            color: #555;
+            position: relative;
         }
 
-        /* OBSTACLE STYLES */
-        .obstacle { border-width: 4px; }
+        /* OBSTACLES */
+        .obstacle { border: 3px solid; }
         .obs-green { border-color: var(--accent); background: #e8f8f5; }
         .obs-amber { border-color: var(--warning); background: #fef9e7; }
         .obs-red { border-color: var(--danger); background: #fdedec; }
         
-        .tile-icon { font-size: 20px; position: absolute; top: 2px; right: 2px; }
-        .tile-cost { position: absolute; bottom: 2px; right: 2px; font-size: 10px; background: #333; color: white; padding: 2px 4px; border-radius: 4px; }
+        .tile-icon { font-size: 18px; position: absolute; z-index: 1; }
+        .tile-number { position: absolute; bottom: 2px; right: 2px; font-size: 8px; opacity: 0.6; }
 
-        /* PLAYERS */
+        /* PLAYER TOKEN */
         .token {
-            width: 32px; height: 32px; border-radius: 50%; border: 3px solid white;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4); position: absolute; transition: all 0.5s ease;
-            z-index: 10; display: flex; justify-content: center; align-items: center; font-size: 18px;
+            width: 28px; height: 28px; border-radius: 50%; border: 2px solid white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.5); position: absolute; 
+            z-index: 10; display: flex; justify-content: center; align-items: center; font-size: 16px;
+            transition: all 0.5s ease;
         }
-        .token-p1 { background: #3498db; } 
+        .token-p1 { background: #3498db; }
+
+        /* DASHBOARD UI */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .resource-box { display: flex; gap: 10px; background: #eee; padding: 10px; border-radius: 8px; justify-content: center; }
+        .res-badge { padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; font-size: 1.1em; }
+        .bg-lift { background: #9b59b6; }
+        .bg-reach { background: #e67e22; }
+
+        /* ACTION AREA */
+        #action-display { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         
-        /* CONTROLS */
-        .btn { border: none; padding: 15px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: transform 0.1s; width: 100%; margin-bottom: 10px; color: white; font-size: 16px;}
+        .btn { border: none; padding: 15px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; color: white; font-size: 1.1em; transition: transform 0.1s; }
         .btn:active { transform: scale(0.98); }
-        .btn-action { background: var(--primary); border-left: 5px solid #1a252f; text-align: left; }
+        .btn-blue { background: var(--primary); }
         .btn-green { background: var(--accent); }
         .btn-red { background: var(--danger); }
-        .btn-warning { background: var(--warning); color: #333; }
-        
-        .hidden { display: none !important; }
+        .btn-warn { background: var(--warning); color: #333; }
+        .btn-purple { background: #8e44ad; }
 
-        /* MODALS */
-        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: flex; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 600px; max-width: 90%; text-align: center; position: relative; }
-        #timer-bar { height: 10px; background: #ddd; width: 100%; margin: 20px 0; border-radius: 5px; overflow: hidden; }
+        /* TIMER & MODALS */
+        #turn-timer { font-size: 2em; font-weight: bold; color: var(--danger); margin: 10px 0; }
+        .hidden { display: none !important; }
+        
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; }
+        .modal-box { background: white; padding: 30px; border-radius: 12px; width: 500px; max-width: 90%; text-align: center; }
+        #timer-bar { height: 10px; background: #ddd; margin: 15px 0; border-radius: 5px; overflow: hidden; }
         #timer-fill { height: 100%; background: var(--accent); width: 100%; transition: width 0.1s linear; }
-        .answer-btn { background: white; border: 2px solid var(--primary); color: var(--primary); margin: 10px 0; text-align: left; transition: all 0.2s; }
-        .answer-btn:hover { background: var(--light); }
-        
-        /* UI ELEMENTS */
-        .card { background: var(--light); padding: 15px; border-radius: 8px; border-left: 5px solid var(--primary); }
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .resource-badge { display: inline-block; padding: 5px 10px; border-radius: 15px; color: white; font-weight: bold; font-size: 14px; margin-right: 5px; }
-        .res-lift { background-color: #9b59b6; } 
-        .res-reach { background-color: #e67e22; } 
-        
-        .loader {
-            border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto;
-        }
+        .opt-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 10px; margin: 5px 0; width: 100%; text-align: left; cursor: pointer; }
+        .opt-btn:hover { background: #eee; }
+
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* NEW TIMER DISPLAY */
-        #turn-timer-display {
-            font-size: 1.2em; font-weight: bold; color: var(--danger); text-align: center; margin-bottom: 10px;
-            background: rgba(255,255,255,0.5); padding: 5px; border-radius: 4px;
-        }
 
     </style>
 </head>
 <body>
 
-    <div id="start-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:20px;">
-        <h1>🏇 Steeplechase Learning Platform</h1>
-        
-        <div id="loading-area" style="text-align: center;">
-            <div class="loader"></div>
-            <p>Loading Question Deck...</p>
-        </div>
-
-        <div id="selection-area" class="hidden" style="width: 400px; text-align: center;">
-            <h3 style="color: var(--accent);">System Ready</h3>
-            <p>Choose Your Jockey Strategy</p>
-            <div style="display:flex; gap:10px; justify-content: center; margin-top: 20px;">
-                <button class="btn btn-green" onclick="startGame('Easy')">Easy<br><span style="font-size:0.8em">The Tactician</span></button>
-                <button class="btn btn-warning" onclick="startGame('Medium')">Medium<br><span style="font-size:0.8em">The Veteran</span></button>
-                <button class="btn btn-red" onclick="startGame('Hard')">Hard<br><span style="font-size:0.8em">The Daredevil</span></button>
+    <div id="start-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <h1>🏇 Steeplechase Arena</h1>
+        <div id="loading-area"><div class="loader"></div><p>Loading Question Deck...</p></div>
+        <div id="selection-area" class="hidden" style="text-align:center;">
+            <h3>Select Your Strategy</h3>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-green" onclick="startGame('Easy')">Easy<br><small>The Tactician</small></button>
+                <button class="btn btn-warn" onclick="startGame('Medium')">Medium<br><small>The Veteran</small></button>
+                <button class="btn btn-red" onclick="startGame('Hard')">Hard<br><small>The Daredevil</small></button>
             </div>
-            <p id="deck-status" style="margin-top: 20px; font-size: 0.8em; color: #7f8c8d;"></p>
+            <p id="deck-status" style="margin-top:15px; font-size:0.8em; color:#888;"></p>
         </div>
     </div>
 
-    <div id="game-container" class="hidden">
-        <div id="sidebar">
-            <h2>Player Dashboard</h2>
-            
-            <div class="card">
-                <div class="stat-row"><span>Jockey:</span> <strong id="ui-jockey">Loading...</strong></div>
-                <div class="stat-row"><span>Lap:</span> <strong id="ui-lap">1 / 2</strong></div>
-            </div>
-
-            <div class="card">
-                <h3>Resources</h3>
-                <div style="margin-bottom: 10px;">
-                    <span class="resource-badge res-lift">LIFT: <span id="res-lift-count">0</span></span>
-                    <span class="resource-badge res-reach">REACH: <span id="res-reach-count">0</span></span>
+    <div id="arena-container" class="hidden">
+        <div id="center-hub">
+            <div class="dashboard-header">
+                <div>
+                    <h2 id="ui-jockey" style="margin:0;">Jockey</h2>
+                    <span id="ui-lap" style="font-size:0.9em; color:#666;">Lap 1 / 2</span>
                 </div>
-                <p style="font-size: 0.8em; color: #666;">Use Lift for Fences 🚧 | Reach for Water 🌊</p>
+                <div id="turn-timer" class="hidden">60s</div>
             </div>
 
-            <div id="action-panel">
-                <h3>Actions</h3>
-                <div id="turn-timer-display" class="hidden">⏱️ 60s</div>
-                <div id="controls-area"></div>
+            <div class="resource-box">
+                <div class="res-badge bg-lift">🚧 LIFT: <span id="res-lift">0</span></div>
+                <div class="res-badge bg-reach">🌊 REACH: <span id="res-reach">0</span></div>
             </div>
-        </div>
 
-        <div id="main-view">
-            <div id="track-container">
-                <div class="track-path" id="track-grid">
-                    </div>
+            <div id="action-display">
+                <p>Waiting for game start...</p>
             </div>
         </div>
     </div>
 
     <div id="modal-overlay" class="hidden">
-        <div class="modal-content">
-            <h2 id="modal-title">Question</h2>
+        <div class="modal-box">
+            <h3 id="q-diff">Question</h3>
             <div id="timer-bar"><div id="timer-fill"></div></div>
-            <p id="modal-text" style="font-size: 1.2em; margin-bottom: 20px;">Question...</p>
-            <div id="modal-options" style="display: flex; flex-direction: column;">
-                </div>
+            <p id="q-text" style="font-size:1.1em; font-weight:bold;">...</p>
+            <div id="q-opts"></div>
         </div>
     </div>
 
     <script>
-        // --- DATA & CONFIG ---
-        const TRACK_LENGTH = 50; 
-        const TOTAL_LAPS = 2;
-        const CSV_FILENAME = 'A_Level_Law_Question_Deck.csv'; 
-        const ACTION_TIME_LIMIT = 60; // 60 Seconds for the Action Phase
+        // --- CONFIG ---
+        const TRACK_SIZE = 50; 
+        const LAPS = 2;
+        const CSV_FILE = 'A_Level_Law_Question_Deck.csv';
+        const ACTION_LIMIT = 60; // Seconds
 
-        let QUESTION_DB = [
-            { id: 1, difficulty: 'Easy', text: "DEMO: What is meant by law?", correct: "Rules enforced by state", d1: "Moral opinions", d2: "Social customs" },
-            { id: 2, difficulty: 'Easy', text: "DEMO: Standard of proof in criminal cases?", correct: "Beyond reasonable doubt", d1: "Balance of probabilities", d2: "Absolute certainty" },
-            { id: 3, difficulty: 'Hard', text: "DEMO: Donoghue v Stevenson established duty of care for:", correct: "Manufacturers to consumers", d1: "Employers to employees", d2: "Doctors to patients" }
+        // --- STATE ---
+        let DB = [
+            { id:1, difficulty:'Easy', text:'DEMO: What is Law?', correct:'Rules enforced by state', d1:'Opinions', d2:'Customs' },
+            { id:3, difficulty:'Hard', text:'DEMO: Donoghue v Stevenson?', correct:'Duty of care', d1:'Contract law', d2:'Criminal intent' }
         ];
-
+        
         const OBSTACLES = {
             6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 1 },
             13: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 1 },
             20: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 2 },
             27: { name: "Open Water",   type: "REACH", severity: 2, cost: 2 },
             34: { name: "Double Hedge", type: "LIFT",  severity: 2, cost: 2 },
-            41: { name: "The Grand Canyon", type: "REACH", severity: 3, cost: 3 }, 
-            48: { name: "The High Wall",    type: "LIFT",  severity: 3, cost: 3 }, 
+            41: { name: "Grand Canyon", type: "REACH", severity: 3, cost: 3 }, 
+            48: { name: "The High Wall",type: "LIFT",  severity: 3, cost: 3 }, 
         };
 
-        // --- GAME ENGINE ---
         class Game {
             constructor() {
                 this.lap = 1;
-                this.player = { pos: 0, lift: 0, reach: 0, jockey: null };
-                this.actionTimer = null;
+                this.player = { pos: 0, lift: 0, reach: 0, jockey: null, blockedBy: null };
+                this.timer = null;
                 this.timeLeft = 0;
-                this.currentObstacleContext = null; // Store context for auto-move
             }
 
             init(jockeyType) {
                 this.player.jockey = new Jockey(jockeyType);
                 document.getElementById('start-screen').classList.add('hidden');
-                document.getElementById('game-container').classList.remove('hidden');
-                document.getElementById('ui-jockey').innerText = `${this.player.jockey.name} (${jockeyType})`;
-                this.renderBoard();
+                document.getElementById('arena-container').classList.remove('hidden');
+                document.getElementById('ui-jockey').innerText = this.player.jockey.name;
+                
+                this.renderTrack();
                 this.startTurn();
             }
 
             startTurn() {
-                this.stopActionTimer(); // Clean up previous
-                updateUI();
-                renderControls("WAITING", "Answer the question to unlock dice...");
+                this.stopTimer();
+                this.updateUI();
                 
-                const q = this.getQuestion();
-                showQuestionModal(q, this.player.jockey.timer, (success) => {
-                    if (success) {
-                        this.startActionPhase();
-                    } else {
-                        this.applyPenalty("Incorrect or Timeout!");
-                    }
-                });
+                // If Blocked, show context
+                let msg = this.player.blockedBy ? 
+                    `🛑 <b>STUCK AT OBSTACLE!</b><br>Answer correctly to make your move.` : 
+                    `🏁 <b>NEW TURN</b><br>Answer to unlock dice.`;
+
+                this.renderAction("MSG", msg);
+
+                // Delay slightly for effect then ask question
+                setTimeout(() => {
+                    const q = this.getQuestion();
+                    showModal(q, this.player.jockey.qTimer, (success) => {
+                        if(success) {
+                            this.startActionPhase();
+                        } else {
+                            this.penalty("Wrong Answer / Timeout");
+                        }
+                    });
+                }, 1500);
             }
 
             startActionPhase() {
-                // Start the 60s Timer
-                this.startActionTimer();
-                renderControls("CHOOSE_STANCE");
-            }
-
-            startActionTimer() {
-                this.stopActionTimer();
-                this.timeLeft = ACTION_TIME_LIMIT;
-                const display = document.getElementById('turn-timer-display');
-                display.classList.remove('hidden');
-                display.innerText = `⏱️ ${this.timeLeft}s`;
-
-                this.actionTimer = setInterval(() => {
-                    this.timeLeft--;
-                    display.innerText = `⏱️ ${this.timeLeft}s`;
-                    
-                    if (this.timeLeft <= 0) {
-                        this.handleActionTimeout();
-                    }
-                }, 1000);
-            }
-
-            stopActionTimer() {
-                if (this.actionTimer) clearInterval(this.actionTimer);
-                document.getElementById('turn-timer-display').classList.add('hidden');
-            }
-
-            handleActionTimeout() {
-                this.stopActionTimer();
-                // AUTO-MOVE LOGIC based on current state check
-                // We infer state from what controls are currently rendered or internal flags
+                this.startTimer();
                 
-                // If we are waiting for STANCE (controls has executeAction buttons)
-                const controls = document.getElementById('controls-area').innerHTML;
-                
-                if (controls.includes('CHOOSE_STANCE') || controls.includes('SPRINT')) {
-                    // Default to CANTER (Safe)
-                    alert("⏳ Time's Up! Auto-selecting CANTER.");
-                    this.executeAction('CANTER');
-                } 
-                else if (this.currentObstacleContext) {
-                    // We are stuck at an obstacle. Default to RISK.
-                    alert("⏳ Time's Up! Forced to RISK IT.");
-                    const ctx = this.currentObstacleContext;
-                    this.resolveObstacle('RISK', 0, null, ctx.riskTarget);
-                }
-                else {
-                    // We are likely at the RESULT screen waiting for Next Turn
-                    // Or stuck in a weird state. Just force next turn.
-                    this.startTurn();
+                if (this.player.blockedBy) {
+                    // Show Obstacle Options
+                    this.renderObstacleOptions(this.player.blockedBy);
+                } else {
+                    // Show Movement Options
+                    this.renderAction("STANCE");
                 }
             }
 
-            getQuestion() {
-                const diff = this.player.jockey.difficulty; 
-                let pool = QUESTION_DB.filter(q => q.difficulty === diff);
-                if (pool.length === 0) pool = QUESTION_DB; 
-                return pool[Math.floor(Math.random() * pool.length)];
-            }
+            // --- CORE ACTIONS ---
 
-            executeAction(actionType) {
-                const r1 = Math.ceil(Math.random() * 6);
-                const r2 = Math.ceil(Math.random() * 6);
+            executeMove(type) {
+                const r1 = roll();
+                const r2 = roll();
                 let move = 0;
-                let gainedResource = null;
+                let res = null;
 
-                if (actionType === 'SPRINT') {
-                    move = r1 + r2; 
-                } else if (actionType === 'GATHER') {
-                    this.gainResource(this.player.jockey.getBias(r1));
-                    this.gainResource(this.player.jockey.getBias(r2));
-                    renderControls("RESULT", `🎒 GATHERED! Rolled ${r1} & ${r2}. Gain 2 Resources. (No Move)`);
-                    return; 
-                } else if (actionType === 'CANTER') {
+                if (type === 'SPRINT') move = r1 + r2;
+                else if (type === 'GATHER') {
+                    this.gain(this.player.jockey.bias(r1));
+                    this.gain(this.player.jockey.bias(r2));
+                    this.endPhase(`🎒 Gathered Resources!<br>Rolled ${r1} & ${r2}.`);
+                    return;
+                }
+                else if (type === 'CANTER') {
                     move = r1;
-                    gainedResource = this.player.jockey.getBias(r2);
-                    this.gainResource(gainedResource);
+                    this.gain(this.player.jockey.bias(r2));
+                    res = this.player.jockey.bias(r2);
                 }
 
-                if (this.player.jockey.difficulty === 'Hard' && r1 <= 2 && actionType !== 'GATHER') {
-                    renderControls("RESULT", `❌ STUMBLE! Hard Jockey rolled a ${r1}. No Movement.`);
-                    return; 
+                // Hard Jockey Stumble
+                if (this.player.jockey.diff === 'Hard' && r1 <= 2 && type !== 'GATHER') {
+                    this.endPhase(`❌ STUMBLE!<br>Red die rolled ${r1}. No Move.`);
+                    return;
                 }
 
-                this.movePlayer(move, r1, r2, gainedResource);
-            }
-
-            movePlayer(steps, d1, d2, res) {
+                // Move Logic
                 const start = this.player.pos;
-                let target = start + steps;
-                let msg = `🎲 Rolled ${d1} & ${d2}. Moving ${steps}.`;
-                if(res) msg += ` +1 ${res}.`;
-
+                const target = start + move;
+                
+                // Collision Check
                 for(let i = start + 1; i <= target; i++) {
-                    let tileIdx = i % TRACK_LENGTH;
-                    if (tileIdx === 0) tileIdx = TRACK_LENGTH; 
+                    let tileIdx = i % TRACK_SIZE;
+                    if (tileIdx === 0) tileIdx = TRACK_SIZE;
 
                     if (OBSTACLES[tileIdx]) {
-                        this.player.pos = i - 1; 
-                        this.renderBoard();
-                        this.triggerObstacleEncounter(OBSTACLES[tileIdx], target - i);
+                        this.player.pos = i - 1; // Stop BEFORE
+                        this.player.blockedBy = OBSTACLES[tileIdx]; // Set Blocked Flag
+                        this.moveToken();
+                        
+                        // Immediately trigger the Obstacle Interface
+                        this.renderObstacleOptions(OBSTACLES[tileIdx]);
                         return; 
                     }
                 }
 
                 this.player.pos = target;
-                this.renderBoard();
+                this.moveToken();
                 this.checkLap();
-                renderControls("RESULT", msg);
+                
+                let msg = `💨 Moved ${move} spaces.`;
+                if(res) msg += `<br>Gained 1 ${res}.`;
+                this.endPhase(msg);
             }
 
-            triggerObstacleEncounter(obs) {
-                const needed = obs.type === 'LIFT' ? this.player.lift : this.player.reach;
-                const riskTarget = obs.severity + 2; 
+            // --- OBSTACLE LOGIC ---
 
-                // Store context for Timer Auto-Move
-                this.currentObstacleContext = { obs: obs, riskTarget: riskTarget };
-
-                let html = `<h3>🛑 ${obs.name}</h3>`;
-                html += `<p>Severity: Level ${obs.severity} (${obs.type})</p>`;
-                html += `<p>Cost: <b>${obs.cost} ${obs.type}</b>. You have: ${needed}.</p>`;
+            renderObstacleOptions(obs) {
+                const type = obs.type;
+                const have = type === 'LIFT' ? this.player.lift : this.player.reach;
+                const need = obs.cost;
+                const diff = Math.max(0, need - have);
                 
-                let buttons = '';
-                if (needed >= obs.cost) {
-                    buttons += `<button class="btn btn-green" onclick="game.resolveObstacle('PAY', ${obs.cost}, '${obs.type}')">PAY & PASS (Safe)</button>`;
+                // Probability Calc
+                const riskTarget = obs.severity + 2; // 3, 4, 5
+                // Chance = (Sides >= Target) / 6
+                const winSides = 7 - riskTarget;
+                const winPct = Math.round((winSides / 6) * 100);
+
+                let html = `<h3 style="margin:0; color:var(--danger)">🛑 ${obs.name}</h3>`;
+                html += `<p style="font-size:0.9em; margin:5px;"><b>${obs.type}</b> (Level ${obs.severity})</p>`;
+                
+                // Status Box
+                html += `<div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:10px; text-align:left; font-size:0.9em;">`;
+                html += `Cost: <b>${need}</b>. You have: <b>${have}</b>.<br>`;
+                
+                if (diff > 0) {
+                    html += `⚠️ You need <b>${diff} more</b> for 100% safety.<br>`;
+                    html += `🎲 Risk Win Chance: <b>${winPct}%</b> (Need ${riskTarget}+)`;
+                } else {
+                    html += `✅ You have enough to pay!`;
+                }
+                html += `</div>`;
+
+                // Buttons
+                if (diff === 0) {
+                    html += `<button class="btn btn-green" onclick="game.resolveObs('PAY', ${need}, '${type}')">💸 PAY & PASS (100% Safe)</button>`;
+                } else {
+                    html += `<button class="btn btn-red" onclick="game.resolveObs('RISK', 0, null, ${riskTarget})">🎲 RISK IT (${winPct}%)</button>`;
                 }
                 
-                buttons += `<button class="btn btn-red" onclick="game.resolveObstacle('RISK', 0, null, ${riskTarget})">RISK IT (Roll ${riskTarget}+)</button>`;
-                
-                document.getElementById('controls-area').innerHTML = html + buttons;
+                // THE NEW BUTTON: WAIT & GATHER
+                html += `<button class="btn btn-purple" onclick="game.obstacleGather()">🎒 WAIT & GATHER RESOURCES</button>`;
+                html += `<p style="font-size:0.8em; color:#666;">Waiting builds resources but costs a turn.</p>`;
+
+                this.renderAction("HTML", html);
             }
 
-            resolveObstacle(method, cost, type, target) {
-                this.currentObstacleContext = null; // Clear context
+            obstacleGather() {
+                const r1 = roll();
+                const r2 = roll();
+                this.gain(this.player.jockey.bias(r1));
+                this.gain(this.player.jockey.bias(r2));
+                // Player stays blocked!
+                this.endPhase(`💤 <b>WAITED.</b><br>Rolled ${r1} & ${r2}.<br>Gained 2 Resources.`);
+            }
 
+            resolveObs(method, cost, type, target) {
                 if (method === 'PAY') {
-                    if (type === 'LIFT') this.player.lift -= cost;
+                    if(type === 'LIFT') this.player.lift -= cost;
                     else this.player.reach -= cost;
-                    this.player.pos += 1; 
-                    renderControls("RESULT", "✅ PAID! Cleared safely.");
+                    this.passObstacle(true, "✅ Paid full cost.");
                 } else {
-                    const roll = Math.ceil(Math.random() * 6);
-                    if (roll >= target) {
-                        this.player.pos += 1; 
-                        renderControls("RESULT", `🎲 SUCCESS! Rolled ${roll} (Needed ${target}+).`);
+                    const r = roll();
+                    if (r >= target) {
+                        this.passObstacle(true, `🎲 RISK SUCCESS!<br>Rolled ${r} (Needed ${target}+).`);
                     } else {
-                        const penalty = 2; 
-                        this.player.pos = Math.max(0, this.player.pos - penalty);
-                        renderControls("RESULT", `💥 CRASH! Rolled ${roll}. Knocked back ${penalty} spaces.`);
+                        // Fail
+                        this.player.pos = Math.max(0, this.player.pos - 2); // Knockback
+                        this.moveToken();
+                        // UNBLOCK them so they have to approach again? Or keep blocked?
+                        // Usually steeplechase refusal means you are still at the fence.
+                        // But knocking back 2 spaces clears the "blocked" flag logic naturally because pos changed.
+                        this.player.blockedBy = null; 
+                        this.endPhase(`💥 CRASH! Rolled ${r}.<br>Knocked back 2 spaces.`);
                     }
                 }
-                updateUI();
-                this.renderBoard();
             }
 
-            applyPenalty(reason) {
+            passObstacle(success, msg) {
+                if(success) {
+                    this.player.pos += 1; // Move past
+                    this.player.blockedBy = null; // Clear block
+                    this.moveToken();
+                    this.endPhase(msg);
+                }
+            }
+
+            // --- UTILS ---
+
+            penalty(reason) {
                 this.player.pos += 1; 
-                const r = Math.random() > 0.5 ? "LIFT" : "REACH";
-                this.gainResource(r);
-                this.checkLap();
-                
-                // Show Penalty Result, THEN wait for Next Turn (using RESULT state)
-                renderControls("RESULT", `❌ ${reason}<br>Penalty: Crawl 1 space. Gained 1 ${r}.`);
-                this.renderBoard();
+                this.gain(Math.random()>0.5 ? "LIFT":"REACH");
+                this.moveToken();
+                this.endPhase(`❌ ${reason}<br>Penalty: Crawl 1 space.`);
             }
 
-            gainResource(type) {
+            endPhase(msg) {
+                this.stopTimer();
+                this.renderAction("HTML", `
+                    <p style="font-size:1.2em;">${msg}</p>
+                    <button class="btn btn-blue" onclick="game.startTurn()">➡️ NEXT TURN</button>
+                `);
+            }
+
+            gain(type) {
                 if(type === 'LIFT') this.player.lift++;
                 if(type === 'REACH') this.player.reach++;
-                updateUI();
+                this.updateUI();
             }
 
             checkLap() {
-                const distance = TRACK_LENGTH * this.lap;
-                if (this.player.pos >= distance) {
-                    if (this.lap === TOTAL_LAPS) {
-                        alert("🎉 FINISH LINE! YOU WIN!");
+                if(this.player.pos >= TRACK_SIZE * this.lap) {
+                    if(this.lap === LAPS) {
+                        alert("🏆 WINNER!");
                         location.reload();
                     } else {
-                        alert("🏁 LAP 1 COMPLETE! Resources Reset.");
+                        alert("🏁 LAP 1 DONE! Resetting Resources.");
                         this.player.lift = 0;
                         this.player.reach = 0;
                         this.lap++;
+                        this.updateUI();
                     }
                 }
             }
 
-            renderBoard() {
-                const grid = document.getElementById('track-grid');
-                grid.innerHTML = '';
-                for(let i=1; i<=TRACK_LENGTH; i++) {
+            // --- RENDERERS ---
+
+            renderTrack() {
+                const arena = document.getElementById('arena-container');
+                // Clean existing tiles if any (except center hub)
+                Array.from(document.getElementsByClassName('tile')).forEach(e => e.remove());
+                Array.from(document.getElementsByClassName('token')).forEach(e => e.remove());
+
+                // Generate 50 tiles in a square loop
+                // 14x14 Grid. 
+                // Top: Row 1, Col 1-13
+                // Right: Col 14, Row 1-13
+                // Bottom: Row 14, Col 14-2
+                // Left: Col 1, Row 14-2
+                
+                const coords = [];
+                // Top side (L->R)
+                for(let c=1; c<=13; c++) coords.push({r:1, c:c});
+                // Right side (T->B)
+                for(let r=1; r<=13; r++) coords.push({r:r, c:14});
+                // Bottom side (R->L)
+                for(let c=14; c>=2; c--) coords.push({r:14, c:c});
+                // Left side (B->T)
+                for(let r=14; r>=2; r--) coords.push({r:r, c:1});
+
+                // coords now has 52 positions. We only need 50.
+                // Steeplechase isn't perfect geometry. We map 1-50 to these.
+
+                for(let i=1; i<=TRACK_SIZE; i++) {
                     const div = document.createElement('div');
                     div.className = 'tile';
-                    div.innerText = i;
+                    div.id = `tile-${i}`;
+                    div.style.gridRow = coords[i-1].r;
+                    div.style.gridColumn = coords[i-1].c;
                     
+                    div.innerHTML = `<span class="tile-number">${i}</span>`;
+
                     if(OBSTACLES[i]) {
                         div.classList.add('obstacle');
-                        if(OBSTACLES[i].severity === 1) div.classList.add('obs-green');
-                        if(OBSTACLES[i].severity === 2) div.classList.add('obs-amber');
-                        if(OBSTACLES[i].severity === 3) div.classList.add('obs-red');
-                        const icon = OBSTACLES[i].type === 'LIFT' ? '🚧' : '🌊';
-                        div.innerHTML += `<div class="tile-icon">${icon}</div><div class="tile-cost">${OBSTACLES[i].cost}</div>`;
+                        const o = OBSTACLES[i];
+                        if(o.severity===1) div.classList.add('obs-green');
+                        if(o.severity===2) div.classList.add('obs-amber');
+                        if(o.severity===3) div.classList.add('obs-red');
+                        div.innerHTML += `<span class="tile-icon">${o.type==='LIFT'?'🚧':'🌊'}</span>`;
                     }
-
-                    let visualPos = this.player.pos % TRACK_LENGTH;
-                    if(visualPos === 0 && this.player.pos > 0) visualPos = 50; 
-
-                    if (i === visualPos) {
-                        const token = document.createElement('div');
-                        token.className = 'token token-p1';
-                        token.innerText = '🏇';
-                        div.appendChild(token);
-                    }
-                    grid.appendChild(div);
+                    arena.appendChild(div);
                 }
+
+                // Add Token
+                const t = document.createElement('div');
+                t.id = 'p1-token';
+                t.className = 'token token-p1';
+                t.innerHTML = '🏇';
+                arena.appendChild(t);
+                this.moveToken();
+            }
+
+            moveToken() {
+                const t = document.getElementById('p1-token');
+                let visPos = this.player.pos % TRACK_SIZE;
+                if(visPos === 0 && this.player.pos > 0) visPos = TRACK_SIZE;
+                if(visPos === 0) visPos = 1; // Start
+                
+                const tile = document.getElementById(`tile-${visPos}`);
+                if(tile) {
+                    // Center token on tile
+                    const rect = tile.getBoundingClientRect();
+                    const arenaRect = document.getElementById('arena-container').getBoundingClientRect();
+                    
+                    // Simple centering via Grid placement? No, safer to match tile grid props
+                    t.style.gridRow = tile.style.gridRow;
+                    t.style.gridColumn = tile.style.gridColumn;
+                    
+                    // Center within the grid cell using margin auto
+                    t.style.margin = "auto";
+                    t.style.position = "relative"; 
+                    tile.appendChild(t); // Physically move DOM element to tile
+                }
+            }
+
+            renderAction(mode, content) {
+                const area = document.getElementById('action-display');
+                if (mode === 'MSG') {
+                    area.innerHTML = `<p style="font-size:1.2em;">${content}</p>`;
+                } 
+                else if (mode === 'HTML') {
+                    area.innerHTML = content;
+                }
+                else if (mode === 'STANCE') {
+                    area.innerHTML = `
+                        <p style="color:var(--accent); font-weight:bold;">Choose Strategy:</p>
+                        <button class="btn btn-blue" onclick="game.executeMove('SPRINT')">⚡ SPRINT (Max Move)</button>
+                        <button class="btn btn-green" onclick="game.executeMove('GATHER')">🎒 GATHER (Max Res)</button>
+                        <button class="btn btn-warn" onclick="game.executeMove('CANTER')">⚖️ CANTER (Split)</button>
+                    `;
+                }
+            }
+
+            updateUI() {
+                document.getElementById('res-lift').innerText = this.player.lift;
+                document.getElementById('res-reach').innerText = this.player.reach;
+                document.getElementById('ui-lap').innerText = `Lap ${this.lap} / ${LAPS}`;
+            }
+
+            // --- TIMERS ---
+            startTimer() {
+                this.stopTimer();
+                this.timeLeft = ACTION_LIMIT;
+                const el = document.getElementById('turn-timer');
+                el.classList.remove('hidden');
+                el.innerText = this.timeLeft + "s";
+                
+                this.timer = setInterval(() => {
+                    this.timeLeft--;
+                    el.innerText = this.timeLeft + "s";
+                    if(this.timeLeft <= 0) {
+                        this.stopTimer();
+                        alert("⏳ TIME UP! Auto-Risking/Cantering.");
+                        if(this.player.blockedBy) {
+                            const t = this.player.blockedBy.severity + 2;
+                            this.resolveObs('RISK',0,null,t);
+                        } else {
+                            this.executeMove('CANTER');
+                        }
+                    }
+                }, 1000);
+            }
+
+            stopTimer() {
+                if(this.timer) clearInterval(this.timer);
+                document.getElementById('turn-timer').classList.add('hidden');
+            }
+
+            // --- Q HANDLER ---
+            getQuestion() {
+                const diff = this.player.jockey.diff;
+                let pool = DB.filter(q => q.difficulty === diff);
+                if(!pool.length) pool = DB;
+                return pool[Math.floor(Math.random()*pool.length)];
             }
         }
 
+        // --- JOCKEY CLASS ---
         class Jockey {
-            constructor(type) {
-                this.difficulty = type;
-                if (type === 'Easy') {
-                    this.name = "The Tactician";
-                    this.timer = 15;
-                    this.bias = [1,2,3,4]; 
-                } else if (type === 'Medium') {
-                    this.name = "The Veteran";
-                    this.timer = 20;
-                    this.bias = [1,2,3]; 
-                } else {
-                    this.name = "The Daredevil";
-                    this.timer = 25;
-                    this.bias = [1,2]; 
-                }
+            constructor(t) {
+                this.diff = t;
+                if(t==='Easy') { this.name='The Tactician'; this.qTimer=15; this.biasArr=[1,2,3,4]; }
+                if(t==='Medium') { this.name='The Veteran'; this.qTimer=20; this.biasArr=[1,2,3]; }
+                if(t==='Hard') { this.name='The Daredevil'; this.qTimer=25; this.biasArr=[1,2]; }
             }
-            getBias(roll) { return this.bias.includes(roll) ? "LIFT" : "REACH"; }
+            bias(r) { return this.biasArr.includes(r) ? 'LIFT' : 'REACH'; }
         }
 
+        // --- GLOBAL & INIT ---
         const game = new Game();
+        function startGame(t) { game.init(t); }
+        function roll() { return Math.ceil(Math.random()*6); }
 
-        function startGame(type) { game.init(type); }
-        function updateUI() {
-            document.getElementById('res-lift-count').innerText = game.player.lift;
-            document.getElementById('res-reach-count').innerText = game.player.reach;
-            document.getElementById('ui-lap').innerText = `${game.lap} / ${TOTAL_LAPS}`;
-        }
-
-        function renderControls(state, msg = "") {
-            const area = document.getElementById('controls-area');
-            area.innerHTML = '';
-            
-            if (state === "WAITING") {
-                area.innerHTML = `<p>${msg}</p>`;
-            } 
-            else if (state === "CHOOSE_STANCE") {
-                area.innerHTML = `
-                    <p style="color:var(--accent);"><b>✅ Answer Correct!</b><br>Choose your Strategy:</p>
-                    <button class="btn btn-action" onclick="game.executeAction('SPRINT')">⚡ SPRINT (Max Speed)</button>
-                    <button class="btn btn-action" onclick="game.executeAction('GATHER')">🎒 GATHER (Max Resources)</button>
-                    <button class="btn btn-warning" onclick="game.executeAction('CANTER')">⚖️ CANTER (Balanced)</button>
-                `;
-            } 
-            else if (state === "RESULT") {
-                // MANUAL NEXT TURN BUTTON
-                area.innerHTML = `
-                    <p>${msg}</p>
-                    <button class="btn btn-action" style="background:#34495e; margin-top:20px;" onclick="game.startTurn()">➡️ NEXT TURN</button>
-                `;
-            }
-        }
-
-        let timerInterval;
-        function showQuestionModal(qObj, seconds, callback) {
-            const modal = document.getElementById('modal-overlay');
+        // --- MODAL ---
+        let qInterval;
+        function showModal(q, sec, cb) {
+            const m = document.getElementById('modal-overlay');
             const fill = document.getElementById('timer-fill');
-            modal.classList.remove('hidden');
-            
-            document.getElementById('modal-title').innerText = `${qObj.difficulty} Question`;
-            document.getElementById('modal-text').innerText = qObj.text;
-            
-            const opts = [
-                { txt: qObj.correct, isCorrect: true },
-                { txt: qObj.d1, isCorrect: false },
-                { txt: qObj.d2, isCorrect: false }
-            ].sort(() => Math.random() - 0.5);
+            m.classList.remove('hidden');
+            document.getElementById('q-diff').innerText = q.difficulty + " Question";
+            document.getElementById('q-text').innerText = q.text;
 
-            const optContainer = document.getElementById('modal-options');
-            optContainer.innerHTML = '';
+            const opts = [{t:q.correct,v:true}, {t:q.d1,v:false}, {t:q.d2,v:false}].sort(()=>Math.random()-0.5);
+            const c = document.getElementById('q-opts'); c.innerHTML='';
             
-            if (timerInterval) clearInterval(timerInterval);
-
-            opts.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = 'btn answer-btn';
-                btn.innerText = opt.txt;
-                btn.onclick = () => {
-                    clearInterval(timerInterval);
-                    modal.classList.add('hidden');
-                    callback(opt.isCorrect); 
-                };
-                optContainer.appendChild(btn);
+            opts.forEach(o => {
+                const b = document.createElement('div');
+                b.className = 'opt-btn'; b.innerText = o.t;
+                b.onclick = () => { end(o.v); };
+                c.appendChild(b);
             });
 
-            fill.style.width = '100%';
-            fill.style.transition = 'none'; 
-            setTimeout(() => {
-                fill.style.transition = `width ${seconds}s linear`;
-                fill.style.width = '0%';
-            }, 10);
+            fill.style.width='100%'; fill.style.transition='none';
+            setTimeout(()=>{ fill.style.transition=`width ${sec}s linear`; fill.style.width='0%'; },10);
+            
+            let t = sec;
+            if(qInterval) clearInterval(qInterval);
+            qInterval = setInterval(()=>{
+                t--; if(t<=0) end(false);
+            },1000);
 
-            let timeLeft = seconds;
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                if(timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    modal.classList.add('hidden');
-                    callback(false); 
-                }
-            }, 1000);
+            function end(res) {
+                clearInterval(qInterval); m.classList.add('hidden'); cb(res);
+            }
         }
 
+        // --- CSV LOAD ---
         window.onload = function() {
-            fetch(CSV_FILENAME)
-                .then(response => {
-                    if (!response.ok) throw new Error("File not found");
-                    return response.text();
-                })
-                .then(text => {
-                    const rows = text.split('\n').slice(1);
-                    const parsed = [];
-                    rows.forEach((row, index) => {
-                        const cols = row.split(','); 
-                        if(cols.length >= 6) {
-                            parsed.push({
-                                id: index,
-                                difficulty: cols[1].trim(),
-                                text: cols[2].trim(),
-                                correct: cols[3].trim(),
-                                d1: cols[4].trim(),
-                                d2: cols[5].trim()
-                            });
-                        }
-                    });
-                    if (parsed.length > 0) {
-                        QUESTION_DB = parsed;
-                        document.getElementById('deck-status').innerText = `✅ Loaded ${parsed.length} questions from ${CSV_FILENAME}`;
-                        document.getElementById('deck-status').style.color = 'green';
-                    }
-                })
-                .catch(err => {
-                    console.warn("Using Demo Data.", err);
-                    document.getElementById('deck-status').innerText = `⚠️ Using internal Demo Data.`;
-                    document.getElementById('deck-status').style.color = 'orange';
-                })
-                .finally(() => {
-                    document.getElementById('loading-area').classList.add('hidden');
-                    document.getElementById('selection-area').classList.remove('hidden');
+            fetch(CSV_FILE).then(r=>r.ok?r.text():null).then(t=>{
+                if(!t) return;
+                const rows=t.split('\n').slice(1);
+                const p=[];
+                rows.forEach((r,i)=>{
+                    const c=r.split(',');
+                    if(c.length>=6) p.push({id:i, difficulty:c[1].trim(), text:c[2].trim(), correct:c[3].trim(), d1:c[4].trim(), d2:c[5].trim()});
                 });
+                if(p.length) { DB=p; document.getElementById('deck-status').innerText=`✅ Loaded ${p.length} Qs`; }
+            }).catch(e=>console.log(e));
         };
+
     </script>
 </body>
 </html>
