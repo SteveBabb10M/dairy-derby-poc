@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steeplechase Arena v8 (GitHub Ready)</title>
+    <title>A-Level Law Steeplechase (v11)</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -29,7 +29,6 @@
         /* THE ARENA LAYOUT (Grid) */
         #arena-container {
             display: grid;
-            /* 14x14 Grid: Outer ring is track, inner 12x12 is UI */
             grid-template-columns: repeat(14, 1fr);
             grid-template-rows: repeat(14, 1fr);
             width: 95vh;
@@ -41,7 +40,7 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
 
-        /* CENTER HUB (Interaction Area) */
+        /* CENTER HUB */
         #center-hub {
             grid-column: 3 / 13;
             grid-row: 3 / 13;
@@ -56,7 +55,7 @@
             overflow-y: auto;
         }
 
-        /* TRACK TILES */
+        /* TILES */
         .tile {
             background: #e0e0e0;
             border: 1px solid #999;
@@ -68,17 +67,12 @@
             color: #555;
             position: relative;
         }
-
-        /* OBSTACLES */
         .obstacle { border: 3px solid; }
         .obs-green { border-color: var(--accent); background: #e8f8f5; }
         .obs-amber { border-color: var(--warning); background: #fef9e7; }
         .obs-red { border-color: var(--danger); background: #fdedec; }
-        
         .tile-icon { font-size: 18px; position: absolute; z-index: 1; }
         .tile-number { position: absolute; bottom: 2px; right: 2px; font-size: 8px; opacity: 0.6; }
-
-        /* PLAYER TOKEN */
         .token {
             width: 28px; height: 28px; border-radius: 50%; border: 2px solid white;
             box-shadow: 0 3px 6px rgba(0,0,0,0.5); position: absolute; 
@@ -87,16 +81,13 @@
         }
         .token-p1 { background: #3498db; }
 
-        /* DASHBOARD UI */
+        /* UI ELEMENTS */
         .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
         .resource-box { display: flex; gap: 10px; background: #eee; padding: 10px; border-radius: 8px; justify-content: center; }
         .res-badge { padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; font-size: 1.1em; }
         .bg-lift { background: #9b59b6; }
         .bg-reach { background: #e67e22; }
-
-        /* ACTION AREA */
         #action-display { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        
         .btn { border: none; padding: 15px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; color: white; font-size: 1.1em; transition: transform 0.1s; }
         .btn:active { transform: scale(0.98); }
         .btn-blue { background: var(--primary); }
@@ -104,34 +95,70 @@
         .btn-red { background: var(--danger); }
         .btn-warn { background: var(--warning); color: #333; }
         .btn-purple { background: #8e44ad; }
-
-        /* TIMER & MODALS */
         #turn-timer { font-size: 2em; font-weight: bold; color: var(--danger); margin: 10px 0; }
         .hidden { display: none !important; }
         
+        /* MODALS */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; }
-        .modal-box { background: white; padding: 30px; border-radius: 12px; width: 500px; max-width: 90%; text-align: center; }
+        .modal-box { background: white; padding: 30px; border-radius: 12px; width: 600px; max-width: 90%; text-align: center; position: relative; }
         #timer-bar { height: 10px; background: #ddd; margin: 15px 0; border-radius: 5px; overflow: hidden; }
         #timer-fill { height: 100%; background: var(--accent); width: 100%; transition: width 0.1s linear; }
-        .opt-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 10px; margin: 5px 0; width: 100%; text-align: left; cursor: pointer; }
+        .opt-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 15px; margin: 5px 0; width: 100%; text-align: left; cursor: pointer; font-size: 1.1em; border-radius: 6px;}
         .opt-btn:hover { background: #eee; }
 
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* INTRO MODAL SPECIFIC */
+        #intro-screen { z-index: 500; } 
+        #intro-content { text-align: left; line-height: 1.6; max-height: 90vh; overflow-y: auto; }
+        #intro-content h2 { color: var(--primary); border-bottom: 2px solid #ddd; padding-bottom: 10px;}
+        #intro-content ul { padding-left: 20px; }
+        #intro-content li { margin-bottom: 10px; }
 
     </style>
 </head>
 <body>
 
-    <div id="start-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-        <h1>🏇 Steeplechase Arena</h1>
-        <div id="loading-area"><div class="loader"></div><p id="loading-text">Loading Question Deck...</p></div>
-        <div id="selection-area" class="hidden" style="text-align:center;">
-            <h3>Select Your Strategy</h3>
+    <div id="intro-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <div class="modal-box" id="intro-content">
+            <h2>🏆 Welcome to the Law Steeplechase</h2>
+            <p><b>Objective:</b> Complete 2 laps of the track and cross the finish line first.</p>
+            
+            <p><b>How to Play:</b></p>
+            <ul>
+                <li>Answer <b>A-Level Law</b> questions to unlock your turn.</li>
+                <li>Your chosen <b>Jockey</b> determines the difficulty of the questions (Easy/Medium/Hard).</li>
+                <li><b>The Obstacles:</b> The track has <span style="color:#8e44ad"><b>Fences</b></span> (needs Lift) and <span style="color:#d35400"><b>Water</b></span> (needs Reach).</li>
+                <li><b>The Choice:</b> Each turn, choose your strategy:
+                    <ul>
+                        <li>⚡ <b>Sprint:</b> Move fast, gain 0 resources.</li>
+                        <li>🎒 <b>Gather:</b> Gain resources, 0 movement.</li>
+                        <li>⚖️ <b>Canter:</b> A mix of both.</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <p><b>Decision Making:</b><br>
+            When you hit an obstacle, you must decide: 
+            <br>1. <b>Pay</b> resources to pass safely.
+            <br>2. <b>Wait & Gather</b> to build up strength.
+            <br>3. <b>Risk It</b> (Roll the dice - failure has penalties!).</p>
+
+            <p style="background:#f9f9f9; padding:10px; border-left: 4px solid var(--primary); font-size: 0.9em;">
+                <i><b>Educational Goal:</b> Use legal knowledge to drive your strategy. Short-term risks vs. long-term planning.</i>
+            </p>
+
+            <button class="btn btn-blue" onclick="closeIntro()">I Understand - Let's Race!</button>
+        </div>
+    </div>
+
+    <div id="start-screen" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <h1>⚖️ A-Level Law Steeplechase</h1>
+        <div id="selection-area" style="text-align:center;">
+            <h3 id="sys-ready">System Ready</h3>
+            <p>Select Your Difficulty & Strategy</p>
             <div style="display:flex; gap:10px;">
-                <button class="btn btn-green" onclick="startGame('Easy')">Easy<br><small>The Tactician</small></button>
-                <button class="btn btn-warn" onclick="startGame('Medium')">Medium<br><small>The Veteran</small></button>
-                <button class="btn btn-red" onclick="startGame('Hard')">Hard<br><small>The Daredevil</small></button>
+                <button class="btn btn-green" onclick="startGame('Easy')"><b>Easy (Tactician)</b><br><small>Safe Dice / 15s Timer</small></button>
+                <button class="btn btn-warn" onclick="startGame('Medium')"><b>Medium (Veteran)</b><br><small>Standard / 20s Timer</small></button>
+                <button class="btn btn-red" onclick="startGame('Hard')"><b>Hard (Daredevil)</b><br><small>Risky Dice / 25s Timer</small></button>
             </div>
             <p id="deck-status" style="margin-top:15px; font-size:0.8em; color:green;"></p>
         </div>
@@ -162,36 +189,99 @@
         <div class="modal-box">
             <h3 id="q-diff">Question</h3>
             <div id="timer-bar"><div id="timer-fill"></div></div>
-            <p id="q-text" style="font-size:1.1em; font-weight:bold;">...</p>
+            <p id="q-text" style="font-size:1.3em; font-weight:bold; margin-bottom: 25px;">...</p>
             <div id="q-opts"></div>
         </div>
     </div>
 
+    <div id="lap-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:250; display:flex; justify-content:center; align-items:center;">
+        <div class="modal-box">
+            <h2>🏁 Lap 1 Complete!</h2>
+            <p>You have reached the halfway point. You must now make a strategic choice.</p>
+            
+            <div style="background:#f1f1f1; padding:15px; margin-bottom:20px; text-align:left;">
+                <p><b>Option A: Maintain Strategy</b><br>Keep your current Jockey (Difficulty). <b>Keep all your stored resources.</b></p>
+                <p><b>Option B: Change Strategy</b><br>Pick a new Jockey (e.g., switch to Hard). <b>Lose all resources.</b></p>
+            </div>
+
+            <button class="btn btn-blue" onclick="game.lapDecide('KEEP')">Keep Strategy (Save Resources)</button>
+            <button class="btn btn-warning" onclick="game.lapDecide('CHANGE')">Change Strategy (Reset Resources)</button>
+        </div>
+    </div>
+
     <script>
+        // --- EMBEDDED DATA (A-LEVEL LAW) ---
+        const RAW_CSV_DATA = `ID,Difficulty,Question_Text,Correct_Answer,Distractor_1,Distractor_2
+1,Easy,What is meant by law?,Rules enforced by courts and the state,Moral opinions held by individuals,Social customs with no legal force
+2,Easy,What is the difference between criminal and civil law?,"Criminal law punishes offences, civil law resolves disputes","Criminal law involves contracts, civil law involves prisons","Criminal law is optional, civil law is compulsory"
+3,Easy,What does mens rea mean?,The mental element of a crime,The physical act of a crime,The punishment for a crime
+4,Easy,What does actus reus mean?,The guilty act,The guilty mind,The court decision
+5,Easy,What two elements are usually needed to prove a crime?,Actus reus and mens rea,Harm and punishment,Intention and sentence
+6,Easy,What is the standard of proof in criminal cases?,Beyond reasonable doubt,On the balance of probabilities,Absolute certainty
+7,Easy,What is the standard of proof in civil cases?,On the balance of probabilities,Beyond reasonable doubt,Beyond all doubt
+8,Easy,What is precedent?,A legal principle from an earlier case,A statute passed by Parliament,A decision made by a jury
+9,Easy,What does stare decisis mean?,Let the decision stand,Change the law,Ignore past cases
+10,Easy,What is statutory law?,Law made by Parliament,Law made by judges,Law made by juries
+11,Easy,What is common law?,Law developed through court decisions,Law written in statutes,Law created by government departments
+12,Easy,What is Parliamentary sovereignty?,Parliament is the supreme law-making body,Judges have more power than Parliament,The Prime Minister makes all laws
+13,Easy,What is the separation of powers?,Division of government into three branches,Power held by one person,Laws apply only to poor people
+14,Easy,What are the three branches of government?,Legislature, Executive, Judiciary,Parliament, Police, Army,Courts, Prisons, Probation
+15,Easy,What is a Green Paper?,A consultation document on a proposed law,A final draft of a law,A law already passed
+16,Easy,What is a White Paper?,A firm proposal for a new law,An idea for discussion,A rejected law
+17,Easy,What is the First Reading of a Bill?,The formal introduction of the Bill,The final vote on the Bill,A detailed debate on the Bill
+18,Easy,What happens at the Committee Stage?,A detailed examination of the Bill,A general debate,The Royal Assent
+19,Easy,What is Royal Assent?,The Monarch’s formal approval of a Bill,The Prime Minister signing the Bill,The public voting on the Bill
+20,Easy,What is delegated legislation?,Law made by bodies other than Parliament,Law made by the King,Law made by the EU
+21,Easy,What is a bye-law?,Law made by local authorities,Law made by government ministers,Law made by the Privy Council
+22,Easy,What is a statutory instrument?,Law made by government ministers,Law made by judges,Law made by town councils
+23,Easy,What is an Order in Council?,Law made by the Privy Council,Law made by local councils,Law made by the police
+24,Easy,What is judicial review?,Courts checking if government acted lawfully,Parliament checking judges,Police checking criminals
+25,Easy,What is the literal rule?,Judges give words their plain meaning,Judges change the meaning,Judges ignore the words
+26,Easy,What is the golden rule?,Modifying the literal meaning to avoid absurdity,Following the literal meaning always,Making up new words
+27,Easy,What is the mischief rule?,Interpreting law to fix the problem it was meant to solve,Ignoring the problem,Creating new mischief
+28,Easy,What is the purposive approach?,Looking at Parliament’s intention,Looking at the dictionary only,Looking at old cases only
+29,Easy,What is the hierarchy of courts?,The order of importance of courts,The layout of a courtroom,The list of judges
+30,Easy,Which court hears most criminal cases?,Magistrates’ Court,Supreme Court,Crown Court
+31,Easy,Which court hears serious criminal cases?,Crown Court,County Court,High Court
+32,Easy,What does the Supreme Court do?,It is the final court of appeal,It hears all parking fines,It creates statutes
+33,Easy,What is a lay magistrate?,An unpaid volunteer judge,A qualified lawyer judge,A police officer
+34,Easy,What is a jury?,A group of 12 people deciding guilt,A group of judges,A group of lawyers
+35,Easy,Who can be a juror?,Anyone aged 18-75 on the electoral register,Only lawyers,Only university graduates
+36,Easy,What is the role of a barrister?,To advocate in court,To arrest criminals,To decide the sentence
+37,Easy,What is the role of a solicitor?,To advise clients and prepare cases,To act as a judge,To work for the police
+38,Easy,What is legal aid?,Government funding for legal costs,Free advice from friends,Paying the judge
+39,Easy,What is alternative dispute resolution (ADR)?,Solving disputes without going to court,Fighting in the street,Ignoring the problem
+40,Easy,What is the burden of proof?,Responsibility to prove a case,Level of evidence required,Length of trial
+41,Easy,Who has the burden of proof in criminal cases?,Prosecution,Defendant,Judge
+42,Easy,What is self-defence?,Reasonable force to protect oneself,Revenge,Punishment
+43,Easy,What is duress?,Being forced to commit a crime,Acting accidentally,Acting recklessly
+44,Easy,What is insanity?,A mental condition affecting responsibility,Lack of intention,Alcohol use
+45,Easy,What is intoxication?,Being under the influence of substances,Being mentally ill,Being reckless
+46,Easy,What is a suspended sentence?,Prison sentence delayed unless conditions are broken,Immediate imprisonment,A fine
+47,Easy,What is consistency in sentencing?,Similar offences receive similar sentences,Different offenders get different treatment,Judges ignore guidelines
+48,Easy,What is the rule of law?,Everyone is subject to the law,Judges make laws freely,Parliament follows judges
+49,Easy,What is access to justice?,Ability to use the legal system,Winning every case,Free legal advice only
+50,Easy,What is justice?,Fair application of the law,Automatic punishment,Public opinion
+51,Medium,Mens rea refers to:,The defendant’s mental state at the time,The defendant’s actions during the offence,The defendant’s behaviour after arrest
+52,Hard,Mens rea refers specifically to:,The defendant’s mental element at the time of the act,The defendant’s awareness of consequences,The defendant’s intention or recklessness generally`;
+
         // --- CONFIG ---
         const TRACK_SIZE = 50; 
         const LAPS = 2;
         const ACTION_LIMIT = 60; // Seconds
-        
-        // IMPORTANT: If this file is in the same repo as the HTML, this works on GitHub Pages.
-        // If testing locally, you might need a local server or the full https://raw.github... URL.
-        const CSV_FILE = 'A_Level_Law_Question_Deck.csv';
 
-        // --- STATE ---
-        // Fallback Data (In case CSV fails to load)
-        let DB = [
-            { id:1, difficulty:'Easy', text:'DEMO: What is Law?', correct:'Rules enforced by state', d1:'Opinions', d2:'Customs' }
-        ];
-        
+        // --- OBSTACLE MAP (UPDATED COSTS: 4, 6, 8) ---
         const OBSTACLES = {
-            6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 1 },
-            13: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 1 },
-            20: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 2 },
-            27: { name: "Open Water",   type: "REACH", severity: 2, cost: 2 },
-            34: { name: "Double Hedge", type: "LIFT",  severity: 2, cost: 2 },
-            41: { name: "Grand Canyon", type: "REACH", severity: 3, cost: 3 }, 
-            48: { name: "The High Wall",type: "LIFT",  severity: 3, cost: 3 }, 
+            6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 4 },
+            13: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 4 },
+            20: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 6 },
+            27: { name: "Open Water",   type: "REACH", severity: 2, cost: 6 },
+            34: { name: "Double Hedge", type: "LIFT",  severity: 2, cost: 6 },
+            41: { name: "Grand Canyon", type: "REACH", severity: 3, cost: 8 }, 
+            48: { name: "The High Wall",type: "LIFT",  severity: 3, cost: 8 }, 
         };
+
+        let DB = [];
 
         class Game {
             constructor() {
@@ -205,7 +295,7 @@
                 this.player.jockey = new Jockey(jockeyType);
                 document.getElementById('start-screen').classList.add('hidden');
                 document.getElementById('arena-container').classList.remove('hidden');
-                document.getElementById('ui-jockey').innerText = this.player.jockey.name;
+                document.getElementById('ui-jockey').innerText = `${this.player.jockey.name} (${jockeyType})`;
                 
                 this.renderTrack();
                 this.startTurn();
@@ -389,12 +479,26 @@
                         alert("🏆 WINNER!");
                         location.reload();
                     } else {
-                        alert("🏁 LAP 1 DONE! Resetting Resources.");
-                        this.player.lift = 0;
-                        this.player.reach = 0;
+                        // PAUSE FOR LAP 2 DECISION
+                        document.getElementById('lap-modal').classList.remove('hidden');
                         this.lap++;
                         this.updateUI();
                     }
+                }
+            }
+
+            lapDecide(decision) {
+                document.getElementById('lap-modal').classList.add('hidden');
+                
+                if (decision === 'CHANGE') {
+                    // Reset resources, Go to Start Screen
+                    this.player.lift = 0;
+                    this.player.reach = 0;
+                    document.getElementById('arena-container').classList.add('hidden');
+                    document.getElementById('start-screen').classList.remove('hidden');
+                } else {
+                    // KEEP: Just continue
+                    this.updateUI();
                 }
             }
 
@@ -431,7 +535,7 @@
                 const t = document.createElement('div');
                 t.id = 'p1-token';
                 t.className = 'token token-p1';
-                t.innerHTML = '🏇';
+                t.innerHTML = '♟️';
                 arena.appendChild(t);
                 this.moveToken();
             }
@@ -462,7 +566,7 @@
                 }
                 else if (mode === 'STANCE') {
                     area.innerHTML = `
-                        <p style="color:var(--accent); font-weight:bold;">Choose Strategy:</p>
+                        <p style="color:var(--primary); font-weight:bold;">Choose Strategy:</p>
                         <button class="btn btn-blue" onclick="game.executeMove('SPRINT')">⚡ SPRINT (Max Move)</button>
                         <button class="btn btn-green" onclick="game.executeMove('GATHER')">🎒 GATHER (Max Res)</button>
                         <button class="btn btn-warn" onclick="game.executeMove('CANTER')">⚖️ CANTER (Split)</button>
@@ -505,9 +609,10 @@
             }
 
             getQuestion() {
+                // TIERED DIFFICULTY LOGIC (Retained for Law Version)
                 const diff = this.player.jockey.diff;
                 let pool = DB.filter(q => q.difficulty === diff);
-                if(!pool.length) pool = DB;
+                if(pool.length === 0) pool = DB; // Fallback
                 return pool[Math.floor(Math.random()*pool.length)];
             }
         }
@@ -524,6 +629,10 @@
 
         const game = new Game();
         function startGame(t) { game.init(t); }
+        function closeIntro() { 
+            document.getElementById('intro-screen').classList.add('hidden'); 
+            document.getElementById('start-screen').classList.remove('hidden'); 
+        }
         function roll() { return Math.ceil(Math.random()*6); }
 
         let qInterval;
@@ -531,7 +640,7 @@
             const m = document.getElementById('modal-overlay');
             const fill = document.getElementById('timer-fill');
             m.classList.remove('hidden');
-            document.getElementById('q-diff').innerText = q.difficulty + " Question";
+            document.getElementById('q-diff').innerText = q.difficulty + " Question"; 
             document.getElementById('q-text').innerText = q.text;
 
             const opts = [{t:q.correct,v:true}, {t:q.d1,v:false}, {t:q.d2,v:false}].sort(()=>Math.random()-0.5);
@@ -558,45 +667,27 @@
             }
         }
 
-        // --- FETCH CSV ---
+        // --- LOAD EMBEDDED DATA ON INIT ---
         window.onload = function() {
-            fetch(CSV_FILE).then(r => {
-                if(!r.ok) throw new Error("File not found");
-                return r.text();
-            }).then(text => {
-                const rows = text.split('\n').slice(1);
-                const parsed = [];
-                // REGEX: Split by comma but IGNORE commas inside quotes
-                const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+            const rows = RAW_CSV_DATA.split('\n').slice(1);
+            const parsed = [];
+            const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
 
-                rows.forEach((row, i) => {
-                    const cols = row.split(regex); 
-                    if(cols.length >= 6) {
-                        parsed.push({
-                            id: i, 
-                            difficulty: cols[1].trim(), 
-                            text: cols[2].trim().replace(/^"|"$/g, ''), // Clean quotes 
-                            correct: cols[3].trim().replace(/^"|"$/g, ''), 
-                            d1: cols[4].trim().replace(/^"|"$/g, ''), 
-                            d2: cols[5].trim().replace(/^"|"$/g, '')
-                        });
-                    }
-                });
-                
-                if(parsed.length) { 
-                    DB = parsed; 
-                    document.getElementById('deck-status').innerText = `✅ Loaded ${parsed.length} Questions from File`;
+            rows.forEach((row, i) => {
+                const cols = row.split(regex); 
+                if(cols.length >= 6) {
+                    parsed.push({
+                        id: i, 
+                        difficulty: cols[1].trim(), 
+                        text: cols[2].trim().replace(/^"|"$/g, ''), 
+                        correct: cols[3].trim().replace(/^"|"$/g, ''), 
+                        d1: cols[4].trim().replace(/^"|"$/g, ''), 
+                        d2: cols[5].trim().replace(/^"|"$/g, '')
+                    });
                 }
-            }).catch(e => {
-                console.warn(e);
-                document.getElementById('deck-status').innerText = `⚠️ Using Demo Data (Make sure this file is on GitHub)`;
-                document.getElementById('loading-text').innerText = "Game Ready (Local Mode)";
-                document.getElementById('loading-area').classList.add('hidden');
-                document.getElementById('selection-area').classList.remove('hidden');
-            }).finally(() => {
-                document.getElementById('loading-area').classList.add('hidden');
-                document.getElementById('selection-area').classList.remove('hidden');
             });
+            DB = parsed; 
+            document.getElementById('deck-status').innerText = `✅ Loaded ${parsed.length} Questions (Embedded)`;
         };
 
     </script>
