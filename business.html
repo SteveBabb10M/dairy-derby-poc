@@ -1,3 +1,22 @@
+This makes the game significantly more strategic. With costs of 4, 6, and 8, players cannot rely on a single lucky "Gather" roll to pass a hard obstacle. They must plan several turns in advance or be forced to risk a crash.
+
+Here is Version 10.2 (Business Edition).
+
+Changes:
+Obstacle Costs Increased:
+
+Green: 4
+
+Amber: 6
+
+Red: 8
+
+Confirmed Splash Screen Fix: This version retains the fix from the previous step, ensuring the "Strategy Select" screen appears correctly after you click "I Understand".
+
+Save this as business.html.
+
+HTML
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,13 +25,13 @@
     <title>OCR Business Steeplechase (Level 2)</title>
     <style>
         :root {
-            --primary: #2980b9; /* Blue for Business */
+            --primary: #2980b9; 
             --accent: #27ae60;
             --warning: #f39c12;
             --danger: #c0392b;
             --light: #ecf0f1;
             --track: #95a5a6;
-            --grass: #34495e; /* Darker, more corporate background */
+            --grass: #34495e; 
         }
 
         body { 
@@ -29,7 +48,6 @@
         /* THE ARENA LAYOUT (Grid) */
         #arena-container {
             display: grid;
-            /* 14x14 Grid: Outer ring is track, inner 12x12 is UI */
             grid-template-columns: repeat(14, 1fr);
             grid-template-rows: repeat(14, 1fr);
             width: 95vh;
@@ -41,7 +59,7 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
         }
 
-        /* CENTER HUB (Interaction Area) */
+        /* CENTER HUB */
         #center-hub {
             grid-column: 3 / 13;
             grid-row: 3 / 13;
@@ -56,7 +74,7 @@
             overflow-y: auto;
         }
 
-        /* TRACK TILES */
+        /* TILES */
         .tile {
             background: #ecf0f1;
             border: 1px solid #bdc3c7;
@@ -68,35 +86,27 @@
             color: #555;
             position: relative;
         }
-
-        /* OBSTACLES */
         .obstacle { border: 3px solid; }
         .obs-green { border-color: var(--accent); background: #e8f8f5; }
         .obs-amber { border-color: var(--warning); background: #fef9e7; }
         .obs-red { border-color: var(--danger); background: #fdedec; }
-        
         .tile-icon { font-size: 18px; position: absolute; z-index: 1; }
         .tile-number { position: absolute; bottom: 2px; right: 2px; font-size: 8px; opacity: 0.6; }
-
-        /* PLAYER TOKEN */
         .token {
             width: 28px; height: 28px; border-radius: 50%; border: 2px solid white;
             box-shadow: 0 3px 6px rgba(0,0,0,0.5); position: absolute; 
             z-index: 10; display: flex; justify-content: center; align-items: center; font-size: 16px;
             transition: all 0.5s ease;
         }
-        .token-p1 { background: #e74c3c; } /* Red Token */
+        .token-p1 { background: #e74c3c; }
 
-        /* DASHBOARD UI */
+        /* UI ELEMENTS */
         .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
         .resource-box { display: flex; gap: 10px; background: #eee; padding: 10px; border-radius: 8px; justify-content: center; }
         .res-badge { padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; font-size: 1.1em; }
         .bg-lift { background: #8e44ad; }
         .bg-reach { background: #d35400; }
-
-        /* ACTION AREA */
         #action-display { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        
         .btn { border: none; padding: 15px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; color: white; font-size: 1.1em; transition: transform 0.1s; }
         .btn:active { transform: scale(0.98); }
         .btn-blue { background: var(--primary); }
@@ -104,26 +114,61 @@
         .btn-red { background: var(--danger); }
         .btn-warn { background: var(--warning); color: #333; }
         .btn-purple { background: #8e44ad; }
-
-        /* TIMER & MODALS */
         #turn-timer { font-size: 2em; font-weight: bold; color: var(--danger); margin: 10px 0; }
         .hidden { display: none !important; }
         
+        /* MODALS */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; }
-        .modal-box { background: white; padding: 30px; border-radius: 12px; width: 600px; max-width: 90%; text-align: center; }
+        .modal-box { background: white; padding: 30px; border-radius: 12px; width: 600px; max-width: 90%; text-align: center; position: relative; }
         #timer-bar { height: 10px; background: #ddd; margin: 15px 0; border-radius: 5px; overflow: hidden; }
         #timer-fill { height: 100%; background: var(--accent); width: 100%; transition: width 0.1s linear; }
         .opt-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 15px; margin: 5px 0; width: 100%; text-align: left; cursor: pointer; font-size: 1.1em; border-radius: 6px;}
         .opt-btn:hover { background: #eee; }
 
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* INTRO MODAL SPECIFIC */
+        #intro-screen { z-index: 500; } 
+        #intro-content { text-align: left; line-height: 1.6; max-height: 90vh; overflow-y: auto; }
+        #intro-content h2 { color: var(--primary); border-bottom: 2px solid #ddd; padding-bottom: 10px;}
+        #intro-content ul { padding-left: 20px; }
+        #intro-content li { margin-bottom: 10px; }
 
     </style>
 </head>
 <body>
 
-    <div id="start-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+    <div id="intro-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <div class="modal-box" id="intro-content">
+            <h2>🏆 Welcome to the Business Steeplechase</h2>
+            <p><b>Objective:</b> Complete 2 laps of the track and cross the finish line first.</p>
+            
+            <p><b>How to Play:</b></p>
+            <ul>
+                <li>Answer Business questions to unlock your turn.</li>
+                <li><b>The Obstacles:</b> The track has <span style="color:#8e44ad"><b>Fences</b></span> (needs Lift) and <span style="color:#d35400"><b>Water</b></span> (needs Reach).</li>
+                <li><b>The Choice:</b> Each turn, choose your strategy:
+                    <ul>
+                        <li>⚡ <b>Sprint:</b> Move fast, gain 0 resources.</li>
+                        <li>🎒 <b>Gather:</b> Gain resources, 0 movement.</li>
+                        <li>⚖️ <b>Canter:</b> A mix of both.</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <p><b>Decision Making:</b><br>
+            When you hit an obstacle, you must decide: 
+            <br>1. <b>Pay</b> resources to pass safely.
+            <br>2. <b>Wait & Gather</b> to build up strength.
+            <br>3. <b>Risk It</b> (Roll the dice - failure has penalties!).</p>
+
+            <p style="background:#f9f9f9; padding:10px; border-left: 4px solid var(--primary); font-size: 0.9em;">
+                <i><b>Educational Goal:</b> This game tests your subject knowledge AND your ability to weigh short-term speed against long-term preparation.</i>
+            </p>
+
+            <button class="btn btn-blue" onclick="closeIntro()">I Understand - Let's Race!</button>
+        </div>
+    </div>
+
+    <div id="start-screen" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center;">
         <h1>💼 OCR Business Steeplechase</h1>
         <div id="selection-area" style="text-align:center;">
             <h3 id="sys-ready">System Ready</h3>
@@ -167,8 +212,23 @@
         </div>
     </div>
 
+    <div id="lap-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:250; display:flex; justify-content:center; align-items:center;">
+        <div class="modal-box">
+            <h2>🏁 Lap 1 Complete!</h2>
+            <p>You have reached the halfway point. You must now make a strategic choice.</p>
+            
+            <div style="background:#f1f1f1; padding:15px; margin-bottom:20px; text-align:left;">
+                <p><b>Option A: Maintain Strategy</b><br>Keep your current Jockey. <b>Keep all your stored resources.</b></p>
+                <p><b>Option B: Change Strategy</b><br>Pick a new Jockey (e.g., switch to Hard for speed). <b>Lose all resources.</b></p>
+            </div>
+
+            <button class="btn btn-blue" onclick="game.lapDecide('KEEP')">Keep Strategy (Save Resources)</button>
+            <button class="btn btn-warning" onclick="game.lapDecide('CHANGE')">Change Strategy (Reset Resources)</button>
+        </div>
+    </div>
+
     <script>
-        // --- EMBEDDED DATA (OCR LEVEL 2 BUSINESS) ---
+        // --- EMBEDDED DATA ---
         const RAW_CSV_DATA = `ID,Difficulty,Question_Text,Correct_Answer,Distractor_1,Distractor_2
 1,Business Purposes (Level 2),What is the main purpose of a business?,To supply goods or services,To give people jobs only,To follow government rules
 2,Business Purposes (Level 2),Which business is owned by one person?,Sole trader,Partnership,Public limited company
@@ -326,15 +386,16 @@
         const LAPS = 2;
         const ACTION_LIMIT = 60; // Seconds
 
-        // --- OBSTACLE MAP ---
+        // --- OBSTACLE MAP (UPDATED COSTS) ---
+        // Green=4, Amber=6, Red=8
         const OBSTACLES = {
-            6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 1 },
-            13: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 1 },
-            20: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 2 },
-            27: { name: "Open Water",   type: "REACH", severity: 2, cost: 2 },
-            34: { name: "Double Hedge", type: "LIFT",  severity: 2, cost: 2 },
-            41: { name: "Grand Canyon", type: "REACH", severity: 3, cost: 3 }, 
-            48: { name: "The High Wall",type: "LIFT",  severity: 3, cost: 3 }, 
+            6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 4 },
+            13: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 4 },
+            20: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 6 },
+            27: { name: "Open Water",   type: "REACH", severity: 2, cost: 6 },
+            34: { name: "Double Hedge", type: "LIFT",  severity: 2, cost: 6 },
+            41: { name: "Grand Canyon", type: "REACH", severity: 3, cost: 8 }, 
+            48: { name: "The High Wall",type: "LIFT",  severity: 3, cost: 8 }, 
         };
 
         let DB = [];
@@ -535,12 +596,26 @@
                         alert("🏆 WINNER!");
                         location.reload();
                     } else {
-                        alert("🏁 LAP 1 DONE! Resetting Resources.");
-                        this.player.lift = 0;
-                        this.player.reach = 0;
+                        // PAUSE FOR LAP 2 DECISION
+                        document.getElementById('lap-modal').classList.remove('hidden');
                         this.lap++;
                         this.updateUI();
                     }
+                }
+            }
+
+            lapDecide(decision) {
+                document.getElementById('lap-modal').classList.add('hidden');
+                
+                if (decision === 'CHANGE') {
+                    // Reset resources, Go to Start Screen
+                    this.player.lift = 0;
+                    this.player.reach = 0;
+                    document.getElementById('arena-container').classList.add('hidden');
+                    document.getElementById('start-screen').classList.remove('hidden');
+                } else {
+                    // KEEP: Just continue
+                    this.updateUI();
                 }
             }
 
@@ -651,7 +726,6 @@
             }
 
             getQuestion() {
-                // LOGIC CHANGE: Use entire DB regardless of Jockey choice
                 let pool = DB;
                 return pool[Math.floor(Math.random()*pool.length)];
             }
@@ -669,6 +743,10 @@
 
         const game = new Game();
         function startGame(t) { game.init(t); }
+        function closeIntro() { 
+            document.getElementById('intro-screen').classList.add('hidden'); 
+            document.getElementById('start-screen').classList.remove('hidden'); 
+        }
         function roll() { return Math.ceil(Math.random()*6); }
 
         let qInterval;
@@ -676,7 +754,7 @@
             const m = document.getElementById('modal-overlay');
             const fill = document.getElementById('timer-fill');
             m.classList.remove('hidden');
-            document.getElementById('q-diff').innerText = q.difficulty; // Shows Topic
+            document.getElementById('q-diff').innerText = q.difficulty; 
             document.getElementById('q-text').innerText = q.text;
 
             const opts = [{t:q.correct,v:true}, {t:q.d1,v:false}, {t:q.d2,v:false}].sort(()=>Math.random()-0.5);
@@ -707,7 +785,6 @@
         window.onload = function() {
             const rows = RAW_CSV_DATA.split('\n').slice(1);
             const parsed = [];
-            // Regex to split by comma but ignore commas in quotes
             const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
 
             rows.forEach((row, i) => {
@@ -715,7 +792,6 @@
                 if(cols.length >= 6) {
                     parsed.push({
                         id: i, 
-                        // Col 1 is now "Topic" (e.g. Business Purposes)
                         difficulty: cols[1].trim(), 
                         text: cols[2].trim().replace(/^"|"$/g, ''), 
                         correct: cols[3].trim().replace(/^"|"$/g, ''), 
