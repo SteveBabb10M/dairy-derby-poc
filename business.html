@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Business Steeplechase (Level 2)</title>
+    <style>
+        :root {
+            --primary: #2980b9; /* Blue for Business */
+            --accent: #27ae60;
+            --warning: #f39c12;
+            --danger: #c0392b;
+            --light: #ecf0f1;
+            --track: #95a5a6;
+            --grass: #34495e; /* Darker, more corporate background */
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #2c3e50; 
+            margin: 0; 
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden;
+        }
+        
+        /* THE ARENA LAYOUT (Grid) */
+        #arena-container {
+            display: grid;
+            /* 14x14 Grid: Outer ring is track, inner 12x12 is UI */
+            grid-template-columns: repeat(14, 1fr);
+            grid-template-rows: repeat(14, 1fr);
+            width: 95vh;
+            height: 95vh;
+            background-color: var(--grass);
+            border: 10px solid #7f8c8d;
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        /* CENTER HUB (Interaction Area) */
+        #center-hub {
+            grid-column: 3 / 13;
+            grid-row: 3 / 13;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+            z-index: 5;
+            overflow-y: auto;
+        }
+
+        /* TRACK TILES */
+        .tile {
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #555;
+            position: relative;
+        }
+
+        /* OBSTACLES */
+        .obstacle { border: 3px solid; }
+        .obs-green { border-color: var(--accent); background: #e8f8f5; }
+        .obs-amber { border-color: var(--warning); background: #fef9e7; }
+        .obs-red { border-color: var(--danger); background: #fdedec; }
+        
+        .tile-icon { font-size: 18px; position: absolute; z-index: 1; }
+        .tile-number { position: absolute; bottom: 2px; right: 2px; font-size: 8px; opacity: 0.6; }
+
+        /* PLAYER TOKEN */
+        .token {
+            width: 28px; height: 28px; border-radius: 50%; border: 2px solid white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.5); position: absolute; 
+            z-index: 10; display: flex; justify-content: center; align-items: center; font-size: 16px;
+            transition: all 0.5s ease;
+        }
+        .token-p1 { background: #e74c3c; } /* Red Token */
+
+        /* DASHBOARD UI */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .resource-box { display: flex; gap: 10px; background: #eee; padding: 10px; border-radius: 8px; justify-content: center; }
+        .res-badge { padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; font-size: 1.1em; }
+        .bg-lift { background: #8e44ad; }
+        .bg-reach { background: #d35400; }
+
+        /* ACTION AREA */
+        #action-display { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        
+        .btn { border: none; padding: 15px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; color: white; font-size: 1.1em; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-blue { background: var(--primary); }
+        .btn-green { background: var(--accent); }
+        .btn-red { background: var(--danger); }
+        .btn-warn { background: var(--warning); color: #333; }
+        .btn-purple { background: #8e44ad; }
+
+        /* TIMER & MODALS */
+        #turn-timer { font-size: 2em; font-weight: bold; color: var(--danger); margin: 10px 0; }
+        .hidden { display: none !important; }
+        
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; }
+        .modal-box { background: white; padding: 30px; border-radius: 12px; width: 600px; max-width: 90%; text-align: center; }
+        #timer-bar { height: 10px; background: #ddd; margin: 15px 0; border-radius: 5px; overflow: hidden; }
+        #timer-fill { height: 100%; background: var(--accent); width: 100%; transition: width 0.1s linear; }
+        .opt-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 15px; margin: 5px 0; width: 100%; text-align: left; cursor: pointer; font-size: 1.1em; border-radius: 6px;}
+        .opt-btn:hover { background: #eee; }
+
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div id="start-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <h1>💼 OCR Business Steeplechase</h1>
+        <div id="selection-area" style="text-align:center;">
+            <h3 id="sys-ready">System Ready</h3>
+            <p>Select Strategy (Affects Timer & Dice Risk)</p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-green" onclick="startGame('Easy')"><b>Tactician</b><br><small>15s Timer / Safe Dice</small></button>
+                <button class="btn btn-warn" onclick="startGame('Medium')"><b>Veteran</b><br><small>20s Timer / Balanced</small></button>
+                <button class="btn btn-red" onclick="startGame('Hard')"><b>Daredevil</b><br><small>25s Timer / Risky</small></button>
+            </div>
+            <p id="deck-status" style="margin-top:15px; font-size:0.8em; color:green;"></p>
+        </div>
+    </div>
+
+    <div id="arena-container" class="hidden">
+        <div id="center-hub">
+            <div class="dashboard-header">
+                <div>
+                    <h2 id="ui-jockey" style="margin:0;">Jockey</h2>
+                    <span id="ui-lap" style="font-size:0.9em; color:#666;">Lap 1 / 2</span>
+                </div>
+                <div id="turn-timer" class="hidden">60s</div>
+            </div>
+
+            <div class="resource-box">
+                <div class="res-badge bg-lift">🚧 LIFT: <span id="res-lift">0</span></div>
+                <div class="res-badge bg-reach">🌊 REACH: <span id="res-reach">0</span></div>
+            </div>
+
+            <div id="action-display">
+                <p>Waiting for game start...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-overlay" class="hidden">
+        <div class="modal-box">
+            <h3 id="q-diff" style="color: #7f8c8d; text-transform: uppercase; font-size: 0.9em; letter-spacing: 1px;">Topic</h3>
+            <div id="timer-bar"><div id="timer-fill"></div></div>
+            <p id="q-text" style="font-size:1.3em; font-weight:bold; margin-bottom: 25px;">...</p>
+            <div id="q-opts"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- EMBEDDED DATA (OCR LEVEL 2 BUSINESS) ---
+        const RAW_CSV_DATA = `ID,Difficulty,Question_Text,Correct_Answer,Distractor_1,Distractor_2
+1,Business Purposes (Level 2),What is the main purpose of a business?,To supply goods or services,To give people jobs only,To follow government rules
+2,Business Purposes (Level 2),Which business is owned by one person?,Sole trader,Partnership,Public limited company
+3,Business Purposes (Level 2),Which business is owned by shareholders?,Public limited company,Sole trader,Charity
+4,Business Purposes (Level 2),What does profit mean?,Money left after costs,Total sales,Money borrowed
+5,Business Purposes (Level 2),Which sector includes farming?,Primary sector,Secondary sector,Tertiary sector
+6,Business Purposes (Level 2),Which sector includes manufacturing?,Secondary sector,Primary sector,Tertiary sector
+7,Business Purposes (Level 2),Which sector includes services?,Tertiary sector,Primary sector,Secondary sector
+8,Business Purposes (Level 2),What is a not-for-profit organisation?,An organisation that reinvests surplus,A business that makes losses,A business owned by shareholders
+9,Business Purposes (Level 2),What does ‘local’ scale mean?,Operates in one area,Operates nationally,Operates worldwide
+10,Business Purposes (Level 2),What does ‘global’ mean?,Operates worldwide,Operates locally,Operates regionally
+11,Business Purposes (Level 2),Which is a private sector business?,A supermarket,A local council,The NHS
+12,Business Purposes (Level 2),Which is a public sector organisation?,Local council,Restaurant,Franchise
+13,Business Purposes (Level 2),What is liability?,Responsibility for debts,Making profit,Hiring staff
+14,Business Purposes (Level 2),What is unlimited liability?,Owner pays debts with personal money,Debts are limited to investment,Government pays debts
+15,Business Purposes (Level 2),What is limited liability?,Owners only lose what they invested,Owners lose personal houses,No one loses money
+16,Business Purposes (Level 2),What is an aim?,A long-term goal,A short-term step,A daily task
+17,Business Purposes (Level 2),What is an objective?,A specific measurable step,A general dream,A random idea
+18,Business Purposes (Level 2),What does SMART stand for?,Specific Measurable Achievable Realistic Time-bound,Simple Money Action Real Time,Smart Money Always Returns Time
+19,Business Purposes (Level 2),Why do businesses set objectives?,To give direction and measure success,To confuse staff,To avoid paying tax
+20,Business Purposes (Level 2),What is a functional area?,A department like HR or Finance,A type of product,A shop floor
+21,Business Purposes (Level 2),What does HR do?,Recruits and trains staff,Counts money,Sells products
+22,Business Purposes (Level 2),What does Finance do?,Manages money and accounts,Designs products,Delivers parcels
+23,Business Purposes (Level 2),What does Marketing do?,Promotes products to customers,Hires staff,Fixes computers
+24,Business Purposes (Level 2),What does Operations do?,Makes products or delivers services,Pays wages,Advertises on TV
+25,Business Purposes (Level 2),What is a customer?,Someone who buys goods,Someone who works there,Someone who supplies parts
+26,Business Purposes (Level 2),What is a consumer?,Someone who uses the product,Someone who sells the product,Someone who makes the product
+27,Business Purposes (Level 2),What is revenue?,Money from sales,Money spent on bills,Money from a bank loan
+28,Business Purposes (Level 2),What are fixed costs?,Costs that stay the same (e.g. rent),Costs that change with sales,Costs for raw materials
+29,Business Purposes (Level 2),What are variable costs?,Costs that change with output,Rent and insurance,Manager salaries
+30,Business Purposes (Level 2),What is breakeven?,When total costs equal total revenue,When you make a profit,When you make a loss
+31,Business Organisations (Level 2),What is a partnership?,Business owned by 2-20 people,Business owned by one person,Business owned by government
+32,Business Organisations (Level 2),What is a deed of partnership?,Legal document agreeing rules,A receipt for goods,A job application
+33,Business Organisations (Level 2),What is a Ltd company?,Private Limited Company,Public Limited Company,Sole Trader
+34,Business Organisations (Level 2),What is a PLC?,Public Limited Company,Private Limited Company,Partnership
+35,Business Organisations (Level 2),Who votes at an AGM?,Shareholders,Customers,Suppliers
+36,Business Organisations (Level 2),What is a franchise?,Buying the right to use a brand,Starting a new brand,Working for free
+37,Business Organisations (Level 2),Who is the franchisor?,The person selling the brand rights,The person buying the rights,The customer
+38,Business Organisations (Level 2),Who is the franchisee?,The person buying the brand rights,The person selling the brand rights,The bank manager
+39,Business Organisations (Level 2),What is a flat structure?,Few layers of management,Many layers of management,No managers
+40,Business Organisations (Level 2),What is a tall structure?,Many layers of management,Few layers of management,One manager only
+41,Business Organisations (Level 2),What is span of control?,Number of people a manager controls,Length of a meeting,Size of the office
+42,Business Organisations (Level 2),What is chain of command?,Line of authority from top to bottom,A type of fence,Connecting computers
+43,Business Organisations (Level 2),What is centralisation?,Decisions made at the top,Decisions made by everyone,Decisions made by customers
+44,Business Organisations (Level 2),What is decentralisation?,Decisions shared with lower staff,Decisions only at top,No decisions made
+45,Business Organisations (Level 2),What is a stakeholder?,Anyone interested in the business,Only the owner,Only the bank
+46,Business Organisations (Level 2),Which is an internal stakeholder?,Employee,Customer,Local community
+47,Business Organisations (Level 2),Which is an external stakeholder?,Customer,Manager,Owner
+48,Business Organisations (Level 2),What do shareholders want?,Dividends and high share price,Low wages,High taxes
+49,Business Organisations (Level 2),What do employees want?,Good pay and job security,Low sales,High losses
+50,Business Organisations (Level 2),What do customers want?,Quality products and good price,High prices,Poor service
+51,Business Organisations (Level 2),What do suppliers want?,Payment on time,Late payment,Returns
+52,Business Organisations (Level 2),What does the local community want?,Jobs and low pollution,Noise and traffic,Factories closing
+53,Business Organisations (Level 2),What does the government want?,Taxes and employment,Tax evasion,Unemployment
+54,Business Organisations (Level 2),What is communication?,Passing information,Keeping secrets,Ignoring people
+55,Business Organisations (Level 2),What is internal communication?,Between staff in the business,With customers,With suppliers
+56,Business Organisations (Level 2),What is external communication?,With people outside the business,Between managers,Between staff
+57,Business Organisations (Level 2),What is formal communication?,Official letters or meetings,Gossip,Chat at lunch
+58,Business Organisations (Level 2),What is informal communication?,Chat or grapevine,Board meeting,Contract
+59,Business Organisations (Level 2),What is vertical communication?,Up or down the hierarchy,Between same level staff,To customers
+60,Business Organisations (Level 2),What is horizontal communication?,Between staff at same level,From boss to worker,From worker to boss
+61,Financial Forecasting (Level 2),What is cash flow?,Money moving in and out,Profit only,Sales only
+62,Financial Forecasting (Level 2),What is an inflow?,Money coming in (e.g. sales),Money going out (e.g. rent),Money in the bank
+63,Financial Forecasting (Level 2),What is an outflow?,Money spent (e.g. wages),Money received,Money saved
+64,Financial Forecasting (Level 2),What is net cash flow?,Inflows minus outflows,Total sales,Total costs
+65,Financial Forecasting (Level 2),What is opening balance?,Money at start of month,Money at end of month,Total profit
+66,Financial Forecasting (Level 2),What is closing balance?,Money at end of month,Money at start of month,Total loss
+67,Financial Forecasting (Level 2),How do you calculate closing balance?,Opening balance + Net cash flow,Opening balance - Inflows,Inflows + Outflows
+68,Financial Forecasting (Level 2),Why forecast cash flow?,To predict shortages,To count profit,To calculate tax
+69,Financial Forecasting (Level 2),What is a profit and loss account?,Shows income and expenses over time,Shows assets,Shows cash flow
+70,Financial Forecasting (Level 2),What is gross profit?,Revenue minus cost of sales,Net profit minus tax,Total cash
+71,Financial Forecasting (Level 2),What is net profit?,Gross profit minus expenses,Sales minus purchases,Cash in bank
+72,Financial Forecasting (Level 2),What is cost of sales?,Direct cost of making goods,Rent and rates,Manager salaries
+73,Financial Forecasting (Level 2),What are overheads?,Indirect costs like rent,Raw materials,Packaging
+74,Financial Forecasting (Level 2),What is a balance sheet?,Snapshot of assets and liabilities,Video of factory,List of staff
+75,Financial Forecasting (Level 2),What is an asset?,Something the business owns,Something it owes,A cost
+76,Financial Forecasting (Level 2),What is a liability?,Something the business owes,Something it owns,A profit
+77,Financial Forecasting (Level 2),What is a fixed asset?,Long-term item (e.g. van),Short-term item (e.g. stock),Cash
+78,Financial Forecasting (Level 2),What is a current asset?,Short-term item (e.g. cash),Building,Machinery
+79,Financial Forecasting (Level 2),What is a current liability?,Debt to pay within a year,Mortgage (25 years),Share capital
+80,Financial Forecasting (Level 2),What is a long-term liability?,Debt over one year (e.g. mortgage),Overdraft,Supplier bill
+81,Financial Forecasting (Level 2),What is working capital?,Current assets minus current liabilities,Total profit,Total sales
+82,Financial Forecasting (Level 2),What is liquidity?,Ability to pay short-term debts,Total profit,Size of factory
+83,Financial Forecasting (Level 2),What is ratio analysis?,Comparing financial figures,Counting stock,Hiring staff
+84,Financial Forecasting (Level 2),What does gross profit margin show?,% of sales that is gross profit,Total cash,Debt level
+85,Financial Forecasting (Level 2),What does net profit margin show?,% of sales that is net profit,Cost of goods,Staff numbers
+86,Financial Forecasting (Level 2),How do you improve profit?,Increase sales or cut costs,Lower prices and increase costs,Hire more staff
+87,Financial Forecasting (Level 2),What is capital?,Money invested in business,London,A building
+88,Financial Forecasting (Level 2),What is a loan?,Borrowed money to be repaid,Free money,Share money
+89,Financial Forecasting (Level 2),What is an overdraft?,Taking more from bank than you have,A long term loan,A mortgage
+90,Financial Forecasting (Level 2),What is trade credit?,Paying suppliers later,Paying immediately,Getting paid early
+91,People in Organisations (Level 2),What is recruitment?,Process of finding staff,Firing staff,Training staff
+92,People in Organisations (Level 2),What is a job description?,Lists duties and responsibilities,Lists skills required,Lists holidays
+93,People in Organisations (Level 2),What is a person specification?,Lists skills and qualities needed,Lists daily tasks,Lists salary
+94,People in Organisations (Level 2),What is internal recruitment?,Hiring someone already in business,Advertising in paper,Job centre
+95,People in Organisations (Level 2),What is external recruitment?,Hiring someone from outside,Promoting a manager,Moving staff desk
+96,People in Organisations (Level 2),What is a CV?,Document of skills and history,Job advert,Contract
+97,People in Organisations (Level 2),What is an interview?,Meeting to ask questions,A written test,A phone call
+98,People in Organisations (Level 2),What is induction training?,Training for new staff,Training for managers,Training for leaving
+99,People in Organisations (Level 2),What is on-the-job training?,Learning while doing the work,Going to college,Reading a book at home
+100,People in Organisations (Level 2),What is off-the-job training?,Learning away from work,Watching boss,Doing the task
+101,People in Organisations (Level 2),What is an appraisal?,Review of staff performance,A pay rise,A sacking
+102,People in Organisations (Level 2),What is motivation?,Desire to work hard,Feeling tired,Wanting to leave
+103,People in Organisations (Level 2),What is financial motivation?,Money (e.g. bonus),Praise,Promotion
+104,People in Organisations (Level 2),What is non-financial motivation?,Praise or responsibility,Wages,Commission
+105,People in Organisations (Level 2),What is a bonus?,Extra money for good work,Basic pay,Pension
+106,People in Organisations (Level 2),What is commission?,% of sales paid to staff,Fixed salary,Hourly rate
+107,People in Organisations (Level 2),What is piece rate?,Pay per item made,Pay per hour,Pay per year
+108,People in Organisations (Level 2),What is a salary?,Fixed annual pay,Hourly pay,Pay per item
+109,People in Organisations (Level 2),What is a wage?,Pay per hour/week,Fixed annual pay,Bonus only
+110,People in Organisations (Level 2),What is fringe benefit?,Perk like company car,Basic pay,Overtime
+111,People in Organisations (Level 2),What is employment law?,Rules protecting workers,Rules for customers,Rules for suppliers
+112,People in Organisations (Level 2),What is discrimination?,Treating people unfairly,Treating people equally,Hiring the best
+113,People in Organisations (Level 2),What is the Equality Act?,Protects against discrimination,Sets minimum wage,Rules on safety
+114,People in Organisations (Level 2),What is Health and Safety?,Keeping people safe at work,Keeping people fit,Healthy eating
+115,People in Organisations (Level 2),What is a contract of employment?,Legal agreement between boss and worker,Job advert,Payslip
+116,People in Organisations (Level 2),What is unfair dismissal?,Sacking without good reason,Redundancy,Retirement
+117,People in Organisations (Level 2),What is redundancy?,Job no longer exists,Worker is lazy,Worker steals
+118,People in Organisations (Level 2),What is a trade union?,Group protecting workers rights,A social club,A bank
+119,People in Organisations (Level 2),What is industrial action?,Strike or work-to-rule,Working hard,Overtime
+120,People in Organisations (Level 2),What is a strike?,Refusing to work,Working faster,Working slower
+121,Marketing Plan (Level 2),What is marketing?,Identifying and satisfying customer needs,Selling only,Making products
+122,Marketing Plan (Level 2),What is market research?,Gathering info on customers,Making adverts,Selling goods
+123,Marketing Plan (Level 2),What is primary research?,New data collected by you,Old data,Internet search
+124,Marketing Plan (Level 2),What is secondary research?,Existing data (e.g. internet),New survey,Questionnaire
+125,Marketing Plan (Level 2),What is a questionnaire?,List of questions for public,A test,A report
+126,Marketing Plan (Level 2),What is a focus group?,Group discussion on product,One person interview,Online survey
+127,Marketing Plan (Level 2),What is qualitative data?,Opinions and words,Numbers and %s,Graphs
+128,Marketing Plan (Level 2),What is quantitative data?,Numbers and statistics,Opinions,Long answers
+129,Marketing Plan (Level 2),What is market segmentation?,Splitting market into groups,Selling to everyone,Ignoring customers
+130,Marketing Plan (Level 2),What is a target market?,Group you want to sell to,Everyone,Suppliers
+131,Marketing Plan (Level 2),What are the 4Ps?,Product Price Place Promotion,People Profit Plan Power,Product Price Plan Profit
+132,Marketing Plan (Level 2),What is product lifecycle?,Stages product goes through,Expiry date,Manufacturing time
+133,Marketing Plan (Level 2),What is growth stage?,Sales are increasing,Sales are falling,Product is new
+134,Marketing Plan (Level 2),What is decline stage?,Sales are falling,Sales are stable,Sales are high
+135,Marketing Plan (Level 2),What is a brand?,Name/logo identifying product,The price tag,What supplier offers
+136,Marketing Plan (Level 2),What is product feature?,What product does,Product price,Product place
+137,Marketing Plan (Level 2),What is product benefit?,Value to customer,Cost to business,Brand name
+138,Marketing Plan (Level 2),What is pricing strategy?,How price is set,How product is made,How staff are trained
+139,Marketing Plan (Level 2),What is place?,Where product is sold,Product design,Promotion method
+140,Marketing Plan (Level 2),What is promotional objective?,What promotion aims to do,Total budget,Sales figure
+141,Marketing Plan (Level 2),What is AIDA?,"Awareness, Interest, Desire, Action","Attention, Information, Decision, Action","Advertise, Inform, Deliver, Act"
+142,Marketing Plan (Level 2),What is a budget?,Planned spending,Total profit,Cash inflow
+143,Marketing Plan (Level 2),Why set a budget?,Control costs,Increase sales,Hire staff
+144,Marketing Plan (Level 2),What is a micro business?,Very small business,Large company,Government organisation
+145,Marketing Plan (Level 2),What is customer group?,People with similar needs,Staff group,Supplier group
+146,Marketing Plan (Level 2),Why plan promotion?,Use money wisely,Increase costs,Reduce customers
+147,Marketing Plan (Level 2),What is impact of promotion?,Effect on customers,Cost only,Product quality
+148,Marketing Plan (Level 2),What is a marketing mix?,Combination of 4Ps,Sales target,Profit level
+149,Marketing Plan (Level 2),What is SWOT?,Strengths Weaknesses Opportunities Threats,Sales Work Orders Time,Staff Work On Time
+150,Marketing Plan (Level 2),What is PESTLE?,Political Economic Social Tech Legal Enviro,Product Price Place Promo People Process,Plan Execute Sell Test Learn Exit`;
+
+        // --- CONFIG ---
+        const TRACK_SIZE = 50; 
+        const LAPS = 2;
+        const ACTION_LIMIT = 60; // Seconds
+
+        // --- OBSTACLE MAP ---
+        const OBSTACLES = {
+            6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 1 },
+            13: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 1 },
+            20: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 2 },
+            27: { name: "Open Water",   type: "REACH", severity: 2, cost: 2 },
+            34: { name: "Double Hedge", type: "LIFT",  severity: 2, cost: 2 },
+            41: { name: "Grand Canyon", type: "REACH", severity: 3, cost: 3 }, 
+            48: { name: "The High Wall",type: "LIFT",  severity: 3, cost: 3 }, 
+        };
+
+        let DB = [];
+
+        class Game {
+            constructor() {
+                this.lap = 1;
+                this.player = { pos: 0, lift: 0, reach: 0, jockey: null, blockedBy: null };
+                this.timer = null;
+                this.timeLeft = 0;
+            }
+
+            init(jockeyType) {
+                this.player.jockey = new Jockey(jockeyType);
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('arena-container').classList.remove('hidden');
+                document.getElementById('ui-jockey').innerText = this.player.jockey.name;
+                
+                this.renderTrack();
+                this.startTurn();
+            }
+
+            startTurn() {
+                this.stopTimer();
+                this.updateUI();
+                
+                let msg = this.player.blockedBy ? 
+                    `🛑 <b>STUCK AT OBSTACLE!</b><br>Answer correctly to make your move.` : 
+                    `🏁 <b>NEW TURN</b><br>Answer to unlock dice.`;
+
+                this.renderAction("MSG", msg);
+
+                setTimeout(() => {
+                    const q = this.getQuestion();
+                    showModal(q, this.player.jockey.qTimer, (success) => {
+                        if(success) {
+                            this.startActionPhase();
+                        } else {
+                            this.penalty("Wrong Answer / Timeout");
+                        }
+                    });
+                }, 1500);
+            }
+
+            startActionPhase() {
+                this.startTimer();
+                
+                if (this.player.blockedBy) {
+                    this.renderObstacleOptions(this.player.blockedBy);
+                } else {
+                    this.renderAction("STANCE");
+                }
+            }
+
+            executeMove(type) {
+                const r1 = roll();
+                const r2 = roll();
+                let move = 0;
+                let res = null;
+
+                if (type === 'SPRINT') move = r1 + r2;
+                else if (type === 'GATHER') {
+                    this.gain(this.player.jockey.bias(r1));
+                    this.gain(this.player.jockey.bias(r2));
+                    this.endPhase(`🎒 Gathered Resources!<br>Rolled ${r1} & ${r2}.`);
+                    return;
+                }
+                else if (type === 'CANTER') {
+                    move = r1;
+                    this.gain(this.player.jockey.bias(r2));
+                    res = this.player.jockey.bias(r2);
+                }
+
+                if (this.player.jockey.diff === 'Hard' && r1 <= 2 && type !== 'GATHER') {
+                    this.endPhase(`❌ STUMBLE!<br>Red die rolled ${r1}. No Move.`);
+                    return;
+                }
+
+                const start = this.player.pos;
+                const target = start + move;
+                
+                for(let i = start + 1; i <= target; i++) {
+                    let tileIdx = i % TRACK_SIZE;
+                    if (tileIdx === 0) tileIdx = TRACK_SIZE;
+
+                    if (OBSTACLES[tileIdx]) {
+                        this.player.pos = i - 1; 
+                        this.player.blockedBy = OBSTACLES[tileIdx]; 
+                        this.moveToken();
+                        this.renderObstacleOptions(OBSTACLES[tileIdx]);
+                        return; 
+                    }
+                }
+
+                this.player.pos = target;
+                this.moveToken();
+                this.checkLap();
+                
+                let msg = `💨 Moved ${move} spaces.`;
+                if(res) msg += `<br>Gained 1 ${res}.`;
+                this.endPhase(msg);
+            }
+
+            renderObstacleOptions(obs) {
+                const type = obs.type;
+                const have = type === 'LIFT' ? this.player.lift : this.player.reach;
+                const need = obs.cost;
+                const diff = Math.max(0, need - have);
+                const riskTarget = obs.severity + 2; 
+                const winSides = 7 - riskTarget;
+                const winPct = Math.round((winSides / 6) * 100);
+
+                let html = `<h3 style="margin:0; color:var(--danger)">🛑 ${obs.name}</h3>`;
+                html += `<p style="font-size:0.9em; margin:5px;"><b>${obs.type}</b> (Level ${obs.severity})</p>`;
+                
+                html += `<div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:10px; text-align:left; font-size:0.9em;">`;
+                html += `Cost: <b>${need}</b>. You have: <b>${have}</b>.<br>`;
+                
+                if (diff > 0) {
+                    html += `⚠️ You need <b>${diff} more</b> for 100% safety.<br>`;
+                    html += `🎲 Risk Win Chance: <b>${winPct}%</b> (Need ${riskTarget}+)`;
+                } else {
+                    html += `✅ You have enough to pay!`;
+                }
+                html += `</div>`;
+
+                if (diff === 0) {
+                    html += `<button class="btn btn-green" onclick="game.resolveObs('PAY', ${need}, '${type}')">💸 PAY & PASS (100% Safe)</button>`;
+                } else {
+                    html += `<button class="btn btn-red" onclick="game.resolveObs('RISK', 0, null, ${riskTarget})">🎲 RISK IT (${winPct}%)</button>`;
+                }
+                
+                html += `<button class="btn btn-purple" onclick="game.obstacleGather()">🎒 WAIT & GATHER RESOURCES</button>`;
+                html += `<p style="font-size:0.8em; color:#666;">Waiting builds resources but costs a turn.</p>`;
+
+                this.renderAction("HTML", html);
+            }
+
+            obstacleGather() {
+                const r1 = roll();
+                const r2 = roll();
+                this.gain(this.player.jockey.bias(r1));
+                this.gain(this.player.jockey.bias(r2));
+                this.endPhase(`💤 <b>WAITED.</b><br>Rolled ${r1} & ${r2}.<br>Gained 2 Resources.`);
+            }
+
+            resolveObs(method, cost, type, target) {
+                if (method === 'PAY') {
+                    if(type === 'LIFT') this.player.lift -= cost;
+                    else this.player.reach -= cost;
+                    this.passObstacle(true, "✅ Paid full cost.");
+                } else {
+                    const r = roll();
+                    if (r >= target) {
+                        this.passObstacle(true, `🎲 RISK SUCCESS!<br>Rolled ${r} (Needed ${target}+).`);
+                    } else {
+                        this.player.pos = Math.max(0, this.player.pos - 2); 
+                        this.moveToken();
+                        this.player.blockedBy = null; 
+                        this.endPhase(`💥 CRASH! Rolled ${r}.<br>Knocked back 2 spaces.`);
+                    }
+                }
+            }
+
+            passObstacle(success, msg) {
+                if(success) {
+                    this.player.pos += 1; 
+                    this.player.blockedBy = null; 
+                    this.moveToken();
+                    this.endPhase(msg);
+                }
+            }
+
+            penalty(reason) {
+                this.player.pos += 1; 
+                this.gain(Math.random()>0.5 ? "LIFT":"REACH");
+                this.moveToken();
+                this.endPhase(`❌ ${reason}<br>Penalty: Crawl 1 space.`);
+            }
+
+            endPhase(msg) {
+                this.stopTimer();
+                this.renderAction("HTML", `
+                    <p style="font-size:1.2em;">${msg}</p>
+                    <button class="btn btn-blue" onclick="game.startTurn()">➡️ NEXT TURN</button>
+                `);
+            }
+
+            gain(type) {
+                if(type === 'LIFT') this.player.lift++;
+                if(type === 'REACH') this.player.reach++;
+                this.updateUI();
+            }
+
+            checkLap() {
+                if(this.player.pos >= TRACK_SIZE * this.lap) {
+                    if(this.lap === LAPS) {
+                        alert("🏆 WINNER!");
+                        location.reload();
+                    } else {
+                        alert("🏁 LAP 1 DONE! Resetting Resources.");
+                        this.player.lift = 0;
+                        this.player.reach = 0;
+                        this.lap++;
+                        this.updateUI();
+                    }
+                }
+            }
+
+            renderTrack() {
+                const arena = document.getElementById('arena-container');
+                Array.from(document.getElementsByClassName('tile')).forEach(e => e.remove());
+                Array.from(document.getElementsByClassName('token')).forEach(e => e.remove());
+
+                const coords = [];
+                for(let c=1; c<=13; c++) coords.push({r:1, c:c}); 
+                for(let r=1; r<=13; r++) coords.push({r:r, c:14}); 
+                for(let c=14; c>=2; c--) coords.push({r:14, c:c}); 
+                for(let r=14; r>=2; r--) coords.push({r:r, c:1}); 
+
+                for(let i=1; i<=TRACK_SIZE; i++) {
+                    const div = document.createElement('div');
+                    div.className = 'tile';
+                    div.id = `tile-${i}`;
+                    div.style.gridRow = coords[i-1].r;
+                    div.style.gridColumn = coords[i-1].c;
+                    div.innerHTML = `<span class="tile-number">${i}</span>`;
+
+                    if(OBSTACLES[i]) {
+                        div.classList.add('obstacle');
+                        const o = OBSTACLES[i];
+                        if(o.severity===1) div.classList.add('obs-green');
+                        if(o.severity===2) div.classList.add('obs-amber');
+                        if(o.severity===3) div.classList.add('obs-red');
+                        div.innerHTML += `<span class="tile-icon">${o.type==='LIFT'?'🚧':'🌊'}</span>`;
+                    }
+                    arena.appendChild(div);
+                }
+
+                const t = document.createElement('div');
+                t.id = 'p1-token';
+                t.className = 'token token-p1';
+                t.innerHTML = '♟️';
+                arena.appendChild(t);
+                this.moveToken();
+            }
+
+            moveToken() {
+                const t = document.getElementById('p1-token');
+                let visPos = this.player.pos % TRACK_SIZE;
+                if(visPos === 0 && this.player.pos > 0) visPos = TRACK_SIZE;
+                if(visPos === 0) visPos = 1; 
+                
+                const tile = document.getElementById(`tile-${visPos}`);
+                if(tile) {
+                    t.style.gridRow = tile.style.gridRow;
+                    t.style.gridColumn = tile.style.gridColumn;
+                    t.style.margin = "auto";
+                    t.style.position = "relative"; 
+                    tile.appendChild(t); 
+                }
+            }
+
+            renderAction(mode, content) {
+                const area = document.getElementById('action-display');
+                if (mode === 'MSG') {
+                    area.innerHTML = `<p style="font-size:1.2em;">${content}</p>`;
+                } 
+                else if (mode === 'HTML') {
+                    area.innerHTML = content;
+                }
+                else if (mode === 'STANCE') {
+                    area.innerHTML = `
+                        <p style="color:var(--primary); font-weight:bold;">Choose Strategy:</p>
+                        <button class="btn btn-blue" onclick="game.executeMove('SPRINT')">⚡ SPRINT (Max Move)</button>
+                        <button class="btn btn-green" onclick="game.executeMove('GATHER')">🎒 GATHER (Max Res)</button>
+                        <button class="btn btn-warn" onclick="game.executeMove('CANTER')">⚖️ CANTER (Split)</button>
+                    `;
+                }
+            }
+
+            updateUI() {
+                document.getElementById('res-lift').innerText = this.player.lift;
+                document.getElementById('res-reach').innerText = this.player.reach;
+                document.getElementById('ui-lap').innerText = `Lap ${this.lap} / ${LAPS}`;
+            }
+
+            startTimer() {
+                this.stopTimer();
+                this.timeLeft = ACTION_LIMIT;
+                const el = document.getElementById('turn-timer');
+                el.classList.remove('hidden');
+                el.innerText = this.timeLeft + "s";
+                
+                this.timer = setInterval(() => {
+                    this.timeLeft--;
+                    el.innerText = this.timeLeft + "s";
+                    if(this.timeLeft <= 0) {
+                        this.stopTimer();
+                        alert("⏳ TIME UP!");
+                        if(this.player.blockedBy) {
+                            const t = this.player.blockedBy.severity + 2;
+                            this.resolveObs('RISK',0,null,t);
+                        } else {
+                            this.executeMove('CANTER');
+                        }
+                    }
+                }, 1000);
+            }
+
+            stopTimer() {
+                if(this.timer) clearInterval(this.timer);
+                document.getElementById('turn-timer').classList.add('hidden');
+            }
+
+            getQuestion() {
+                // LOGIC CHANGE: Use entire DB regardless of Jockey choice
+                let pool = DB;
+                return pool[Math.floor(Math.random()*pool.length)];
+            }
+        }
+
+        class Jockey {
+            constructor(t) {
+                this.diff = t;
+                if(t==='Easy') { this.name='The Tactician'; this.qTimer=15; this.biasArr=[1,2,3,4]; }
+                if(t==='Medium') { this.name='The Veteran'; this.qTimer=20; this.biasArr=[1,2,3]; }
+                if(t==='Hard') { this.name='The Daredevil'; this.qTimer=25; this.biasArr=[1,2]; }
+            }
+            bias(r) { return this.biasArr.includes(r) ? 'LIFT' : 'REACH'; }
+        }
+
+        const game = new Game();
+        function startGame(t) { game.init(t); }
+        function roll() { return Math.ceil(Math.random()*6); }
+
+        let qInterval;
+        function showModal(q, sec, cb) {
+            const m = document.getElementById('modal-overlay');
+            const fill = document.getElementById('timer-fill');
+            m.classList.remove('hidden');
+            document.getElementById('q-diff').innerText = q.difficulty; // Shows Topic
+            document.getElementById('q-text').innerText = q.text;
+
+            const opts = [{t:q.correct,v:true}, {t:q.d1,v:false}, {t:q.d2,v:false}].sort(()=>Math.random()-0.5);
+            const c = document.getElementById('q-opts'); c.innerHTML='';
+            
+            opts.forEach(o => {
+                const b = document.createElement('div');
+                b.className = 'opt-btn'; b.innerText = o.t.replace(/"/g, ''); 
+                b.onclick = () => { end(o.v); };
+                c.appendChild(b);
+            });
+
+            fill.style.width='100%'; fill.style.transition='none';
+            setTimeout(()=>{ fill.style.transition=`width ${sec}s linear`; fill.style.width='0%'; },10);
+            
+            let t = sec;
+            if(qInterval) clearInterval(qInterval);
+            qInterval = setInterval(()=>{
+                t--; if(t<=0) end(false);
+            },1000);
+
+            function end(res) {
+                clearInterval(qInterval); m.classList.add('hidden'); cb(res);
+            }
+        }
+
+        // --- LOAD EMBEDDED DATA ON INIT ---
+        window.onload = function() {
+            const rows = RAW_CSV_DATA.split('\n').slice(1);
+            const parsed = [];
+            // Regex to split by comma but ignore commas in quotes
+            const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+
+            rows.forEach((row, i) => {
+                const cols = row.split(regex); 
+                if(cols.length >= 6) {
+                    parsed.push({
+                        id: i, 
+                        // Col 1 is now "Topic" (e.g. Business Purposes)
+                        difficulty: cols[1].trim(), 
+                        text: cols[2].trim().replace(/^"|"$/g, ''), 
+                        correct: cols[3].trim().replace(/^"|"$/g, ''), 
+                        d1: cols[4].trim().replace(/^"|"$/g, ''), 
+                        d2: cols[5].trim().replace(/^"|"$/g, '')
+                    });
+                }
+            });
+            DB = parsed; 
+            document.getElementById('deck-status').innerText = `✅ Loaded ${parsed.length} Questions (Embedded)`;
+        };
+
+    </script>
+</body>
+</html>
