@@ -1,0 +1,150 @@
+ID,Difficulty,Question_Text,Correct_Answer,Distractor_1,Distractor_2
+1,Business Purposes (Level 2),What is the main purpose of a business?,To supply goods or services,To give people jobs only,To follow government rules
+2,Business Purposes (Level 2),Which business is owned by one person?,Sole trader,Partnership,Public limited company
+3,Business Purposes (Level 2),Which business is owned by shareholders?,Public limited company,Sole trader,Charity
+4,Business Purposes (Level 2),What does profit mean?,Money left after costs,Total sales,Money borrowed
+5,Business Purposes (Level 2),Which sector includes farming?,Primary sector,Secondary sector,Tertiary sector
+6,Business Purposes (Level 2),Which sector includes manufacturing?,Secondary sector,Primary sector,Tertiary sector
+7,Business Purposes (Level 2),Which sector includes services?,Tertiary sector,Primary sector,Secondary sector
+8,Business Purposes (Level 2),What is a not-for-profit organisation?,An organisation that reinvests surplus,A business that makes losses,A business owned by shareholders
+9,Business Purposes (Level 2),What does ‘local’ scale mean?,Operates in one area,Operates nationally,Operates worldwide
+10,Business Purposes (Level 2),What does ‘global’ mean?,Operates worldwide,Operates locally,Operates regionally
+11,Business Purposes (Level 2),Which is a private sector business?,A supermarket,A local council,The NHS
+12,Business Purposes (Level 2),Which is a public sector organisation?,Local council,Restaurant,Franchise
+13,Business Purposes (Level 2),What is government influence on business?,Rules and policies affecting business,Daily management of shops,Setting prices for all goods
+14,Business Purposes (Level 2),What is taxation?,Money paid to government,Business profit,Employee wages
+15,Business Purposes (Level 2),What is inflation?,Rising prices over time,Falling wages,Lower interest rates
+16,Business Purposes (Level 2),What is a partnership?,Business owned by two or more people,Business owned by one person,Business owned by government
+17,Business Purposes (Level 2),What is a franchise?,Buying the right to use a brand,Starting a charity,Merging businesses
+18,Business Purposes (Level 2),What does size of business mean?,Number of employees,Location only,Type of product
+19,Business Purposes (Level 2),What is a medium-sized business?,Between small and large,Only one worker,"Over 10,000 workers"
+20,Business Purposes (Level 2),What is a charity?,Not-for-profit organisation,Private business,Public company
+21,Business Purposes (Level 2),What is the business environment?,Conditions businesses operate in,The office building,The workforce only
+22,Business Purposes (Level 2),What is a trend?,A general change over time,A sudden accident,A fixed rule
+23,Business Purposes (Level 2),Which factor is economic?,Interest rates,Fashion taste,Company logo
+24,Business Purposes (Level 2),Which factor is social?,Changes in lifestyle,Tax law,Exchange rates
+25,Business Purposes (Level 2),What is legal change?,New laws or regulations,New technology,New competitors
+26,Business Purposes (Level 2),What does classification mean?,Grouping businesses,Closing businesses,Taxing businesses
+27,Business Purposes (Level 2),What is a national business?,Operates across a country,Operates in one town,Operates worldwide
+28,Business Purposes (Level 2),What is a regional business?,Operates in part of a country,Operates globally,Operates locally only
+29,Business Purposes (Level 2),What is ownership?,Who owns the business,Where the business is,What the business sells
+30,Business Purposes (Level 2),What is a co-operative?,Owned by members,Owned by one person,Owned by shareholders
+31,Business Organisations (Level 2),What is a business aim?,A long-term goal,A daily task,A legal rule
+32,Business Organisations (Level 2),What is a business objective?,A specific target,A general idea,A mission statement
+33,Business Organisations (Level 2),What does SMART stand for?,"Specific, Measurable, Achievable, Realistic, Time-bound","Simple, Modern, Accurate, Relevant, Timed","Small, Measured, Active, Ready, True"
+34,Business Organisations (Level 2),Which is a financial aim?,Make a profit,Improve teamwork,Increase training
+35,Business Organisations (Level 2),Which is a growth objective?,Increase market share,Reduce staff,Close branches
+36,Business Organisations (Level 2),What is a functional area?,A department in a business,A type of customer,A business owner
+37,Business Organisations (Level 2),Which is a functional area?,Marketing,Shareholders,Suppliers
+38,Business Organisations (Level 2),What does the finance function do?,Manages money,Sells products,Hires staff
+39,Business Organisations (Level 2),What does HR do?,Manages employees,Sets prices,Delivers goods
+40,Business Organisations (Level 2),What does marketing do?,Promotes products,Pays wages,Keeps records
+41,Business Organisations (Level 2),What does customer service focus on?,Helping customers,Producing goods,Managing accounts
+42,Business Organisations (Level 2),What is logistics?,Moving goods,Advertising,Recruiting staff
+43,Business Organisations (Level 2),Why do businesses set aims?,To give direction,To increase laws,To reduce staff
+44,Business Organisations (Level 2),What happens if aims are unclear?,Confusion,Higher profits,More customers
+45,Business Organisations (Level 2),What is a mission statement?,What a business wants to achieve,Daily work plan,Financial report
+46,Business Organisations (Level 2),Which business is public sector?,Local council,Restaurant,Retail shop
+47,Business Organisations (Level 2),Which business is private sector?,Clothing store,NHS hospital,Police service
+48,Business Organisations (Level 2),What does communication mean?,Sharing information,Giving orders only,Writing reports
+49,Business Organisations (Level 2),Why do departments need to work together?,To meet aims,To compete internally,To reduce costs only
+50,Business Organisations (Level 2),What links sales and marketing?,Selling products,Hiring staff,Managing IT
+51,Business Organisations (Level 2),What is administration?,Office support work,Manufacturing,Advertising
+52,Business Organisations (Level 2),What is R&D?,Research and development,Retail and distribution,Revenue and debt
+53,Business Organisations (Level 2),Why are aims reviewed?,To check progress,To increase costs,To close business
+54,Business Organisations (Level 2),What is short-term objective?,Achieved soon,Achieved in 10 years,Never measured
+55,Business Organisations (Level 2),What is long-term aim?,Future goal,Daily task,Weekly plan
+56,Business Organisations (Level 2),What is an advantage of clear aims?,Better focus,Higher taxes,More rules
+57,Business Organisations (Level 2),What is a disadvantage of unclear aims?,Poor direction,More sales,More staff
+58,Business Organisations (Level 2),What is a large organisation?,Many employees,One worker,Family business
+59,Business Organisations (Level 2),What is an external link?,Supplier,Employee,Manager
+60,Business Organisations (Level 2),What does IT support do?,Supports technology,Sells products,Manages staff
+61,Financial Forecasting (Level 2),What is a cost?,Money spent,Money earned,Profit
+62,Financial Forecasting (Level 2),What is revenue?,Money coming in,Money going out,Total costs
+63,Financial Forecasting (Level 2),What is profit?,Revenue minus costs,Revenue plus costs,Costs minus revenue
+64,Financial Forecasting (Level 2),What is a fixed cost?,Does not change,Changes with output,Paid once
+65,Financial Forecasting (Level 2),What is a variable cost?,Changes with output,Always the same,Paid once
+66,Financial Forecasting (Level 2),What is a start-up cost?,Cost to set up,Daily running cost,Unexpected cost
+67,Financial Forecasting (Level 2),What is an operating cost?,Cost of running business,Loan,Grant
+68,Financial Forecasting (Level 2),What is direct cost?,Linked to production,Office rent,Manager salary
+69,Financial Forecasting (Level 2),What is indirect cost?,Not linked to production,Raw materials,Packaging
+70,Financial Forecasting (Level 2),What is gross profit?,Revenue minus direct costs,Revenue minus all costs,Total revenue
+71,Financial Forecasting (Level 2),What is net profit?,Gross profit minus indirect costs,Revenue minus direct costs,Total revenue
+72,Financial Forecasting (Level 2),What is break-even?,No profit no loss,Maximum profit,Maximum loss
+73,Financial Forecasting (Level 2),What does break-even show?,Where revenue equals costs,Total sales,Total costs
+74,Financial Forecasting (Level 2),What is contribution?,Price minus variable cost,Fixed costs,Net profit
+75,Financial Forecasting (Level 2),What is a break-even graph?,Shows costs and revenue,Shows cash only,Shows staff levels
+76,Financial Forecasting (Level 2),What is margin of safety?,Amount above break-even,Total profit,Total costs
+77,Financial Forecasting (Level 2),What is cash inflow?,Money coming in,Money going out,Profit
+78,Financial Forecasting (Level 2),What is cash outflow?,Money going out,Money coming in,Revenue
+79,Financial Forecasting (Level 2),What is opening balance?,Cash at start,Cash at end,Total sales
+80,Financial Forecasting (Level 2),What is closing balance?,Cash at end,Cash at start,Total profit
+81,Financial Forecasting (Level 2),What is cash flow?,Inflow minus outflow,Revenue minus costs,Profit only
+82,Financial Forecasting (Level 2),What is a cash flow forecast?,Prediction of cash,Record of sales,Profit statement
+83,Financial Forecasting (Level 2),Why is cash flow important?,Pay bills,Set prices,Hire staff
+84,Financial Forecasting (Level 2),What can cause cash problems?,Late payments,High sales,Low costs
+85,Financial Forecasting (Level 2),What is a positive cash flow?,More inflow than outflow,More outflow than inflow,No cash
+86,Financial Forecasting (Level 2),What is a negative cash flow?,More outflow than inflow,More inflow than outflow,Break-even
+87,Financial Forecasting (Level 2),Why forecast cash flow?,Plan ahead,Increase profit,Reduce sales
+88,Financial Forecasting (Level 2),What is monthly data?,Figures for each month,Figures for year,Figures for day
+89,Financial Forecasting (Level 2),What affects break-even?,Costs and price,Staff names,Business logo
+90,People in Organisations (Level 2),What is a job role?,A set of duties,A business aim,A product
+91,People in Organisations (Level 2),What is a job description?,Details of a job,Details of a company,Details of pay only
+92,People in Organisations (Level 2),What is a person specification?,Skills needed,Job location,Business plan
+93,People in Organisations (Level 2),What is recruitment?,Finding employees,Training staff,Paying wages
+94,People in Organisations (Level 2),What is an interview?,Meeting to assess applicant,Training session,Staff meeting
+95,People in Organisations (Level 2),What is a CV?,Summary of skills,Application decision,Job contract
+96,People in Organisations (Level 2),What is an application form?,Form to apply for job,Pay record,Training plan
+97,People in Organisations (Level 2),What is organisational structure?,How roles are arranged,Building layout,Pay system
+98,People in Organisations (Level 2),What is a tall structure?,Many levels,Few levels,No managers
+99,People in Organisations (Level 2),What is a flat structure?,Few levels,Many levels,No staff
+100,People in Organisations (Level 2),What is span of control?,Number of people managed,Area covered,Salary level
+101,People in Organisations (Level 2),What is centralised structure?,Decisions at top,Decisions by staff,No decisions
+102,People in Organisations (Level 2),What is decentralised structure?,Decisions spread out,Decisions only at top,No managers
+103,People in Organisations (Level 2),What is progression?,Moving up roles,Leaving job,Changing pay
+104,People in Organisations (Level 2),What is employability skill?,Skill for work,Personal hobby,Academic subject
+105,People in Organisations (Level 2),What is teamwork?,Working with others,Working alone,Managing finance
+106,People in Organisations (Level 2),What is communication skill?,Sharing information,Making profit,Using machines
+107,People in Organisations (Level 2),What is career plan?,Plan for future work,Daily timetable,Job contract
+108,People in Organisations (Level 2),What is SMART target?,Clear goal,Job role,Interview question
+109,People in Organisations (Level 2),What is labour market information?,Data about jobs,Employee records,Pay slips
+110,People in Organisations (Level 2),What is full-time work?,Standard hours,Few hours,Temporary work
+111,People in Organisations (Level 2),What is part-time work?,Fewer hours,Full hours,Self-employed
+112,People in Organisations (Level 2),What is contract work?,Fixed period job,Permanent job,Volunteer work
+113,People in Organisations (Level 2),What is personal value?,What matters to you,Job title,Salary
+114,People in Organisations (Level 2),What is equality?,Fair treatment,Same job,Same pay only
+115,People in Organisations (Level 2),What is decision making?,Choosing options,Giving orders,Following rules
+116,People in Organisations (Level 2),Why update career plan?,Skills change,Jobs end,Pay decreases
+117,People in Organisations (Level 2),What is professional skill?,Skill for job role,Personal interest,Hobby
+118,People in Organisations (Level 2),What is technical skill?,Job-specific skill,Communication,Teamwork
+119,People in Organisations (Level 2),What is interview preparation?,Getting ready,Starting job,Leaving job
+120,Marketing Plan (Level 2),What is marketing?,Finding and meeting customer needs,Making products,Paying wages
+121,Marketing Plan (Level 2),Who are customers?,People who buy,People who work,People who supply
+122,Marketing Plan (Level 2),What is a USP?,What makes product special,Product price,Business logo
+123,Marketing Plan (Level 2),What is market segmentation?,Grouping customers,Setting prices,Selling goods
+124,Marketing Plan (Level 2),What are the 4Ps?,"Product, Price, Place, Promotion","People, Profit, Plan, Price","Produce, Place, Pay, Promote"
+125,Marketing Plan (Level 2),What is promotion?,Telling customers,Making goods,Delivering stock
+126,Marketing Plan (Level 2),What is advertising?,Paid promotion,Customer service,Packaging
+127,Marketing Plan (Level 2),What is sales promotion?,Short-term offers,Long-term price,Brand image
+128,Marketing Plan (Level 2),What is public relations?,Building reputation,Direct selling,Market research
+129,Marketing Plan (Level 2),What is direct marketing?,Contacting customers directly,TV adverts,Store displays
+130,Marketing Plan (Level 2),What is a target market?,Chosen customer group,All customers,Suppliers
+131,Marketing Plan (Level 2),What is market research?,Finding customer info,Selling products,Training staff
+132,Marketing Plan (Level 2),What is primary research?,New data,Old data,Internet only
+133,Marketing Plan (Level 2),What is secondary research?,Existing data,Surveys,Interviews
+134,Marketing Plan (Level 2),What is a marketing plan?,Plan for marketing,Business accounts,Staff schedule
+135,Marketing Plan (Level 2),What is customer need?,What customer wants,What business sells,What supplier offers
+136,Marketing Plan (Level 2),What is product feature?,What product does,Product price,Product place
+137,Marketing Plan (Level 2),What is product benefit?,Value to customer,Cost to business,Brand name
+138,Marketing Plan (Level 2),What is pricing strategy?,How price is set,How product is made,How staff are trained
+139,Marketing Plan (Level 2),What is place?,Where product is sold,Product design,Promotion method
+140,Marketing Plan (Level 2),What is promotional objective?,What promotion aims to do,Total budget,Sales figure
+141,Marketing Plan (Level 2),What is AIDA?,"Awareness, Interest, Desire, Action","Attention, Information, Decision, Action","Advertise, Inform, Deliver, Act"
+142,Marketing Plan (Level 2),What is a budget?,Planned spending,Total profit,Cash inflow
+143,Marketing Plan (Level 2),Why set a budget?,Control costs,Increase sales,Hire staff
+144,Marketing Plan (Level 2),What is a micro business?,Very small business,Large company,Government organisation
+145,Marketing Plan (Level 2),What is customer group?,People with similar needs,Staff group,Supplier group
+146,Marketing Plan (Level 2),Why plan promotion?,Use money wisely,Increase costs,Reduce customers
+147,Marketing Plan (Level 2),What is impact of promotion?,Effect on customers,Cost only,Product quality
+148,Marketing Plan (Level 2),What is a marketing mix?,Combination of 4Ps,Sales target,Profit level
+149,Marketing Plan (Level 2),Why is marketing important?,Attract customers,Reduce wages,Follow law

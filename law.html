@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A-Level Law Steeplechase (v11)</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --warning: #f39c12;
+            --danger: #c0392b;
+            --light: #ecf0f1;
+            --track: #95a5a6;
+            --grass: #8da35e;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #333; 
+            margin: 0; 
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden;
+        }
+        
+        /* THE ARENA LAYOUT (Grid) */
+        #arena-container {
+            display: grid;
+            grid-template-columns: repeat(14, 1fr);
+            grid-template-rows: repeat(14, 1fr);
+            width: 95vh;
+            height: 95vh;
+            background-color: var(--grass);
+            border: 10px solid #5d6d3d;
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        /* CENTER HUB */
+        #center-hub {
+            grid-column: 3 / 13;
+            grid-row: 3 / 13;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+            z-index: 5;
+            overflow-y: auto;
+        }
+
+        /* TILES */
+        .tile {
+            background: #e0e0e0;
+            border: 1px solid #999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #555;
+            position: relative;
+        }
+        .obstacle { border: 3px solid; }
+        .obs-green { border-color: var(--accent); background: #e8f8f5; }
+        .obs-amber { border-color: var(--warning); background: #fef9e7; }
+        .obs-red { border-color: var(--danger); background: #fdedec; }
+        .tile-icon { font-size: 18px; position: absolute; z-index: 1; }
+        .tile-number { position: absolute; bottom: 2px; right: 2px; font-size: 8px; opacity: 0.6; }
+        .token {
+            width: 28px; height: 28px; border-radius: 50%; border: 2px solid white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.5); position: absolute; 
+            z-index: 10; display: flex; justify-content: center; align-items: center; font-size: 16px;
+            transition: all 0.5s ease;
+        }
+        .token-p1 { background: #3498db; }
+
+        /* UI ELEMENTS */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .resource-box { display: flex; gap: 10px; background: #eee; padding: 10px; border-radius: 8px; justify-content: center; }
+        .res-badge { padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; font-size: 1.1em; }
+        .bg-lift { background: #9b59b6; }
+        .bg-reach { background: #e67e22; }
+        #action-display { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .btn { border: none; padding: 15px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; color: white; font-size: 1.1em; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-blue { background: var(--primary); }
+        .btn-green { background: var(--accent); }
+        .btn-red { background: var(--danger); }
+        .btn-warn { background: var(--warning); color: #333; }
+        .btn-purple { background: #8e44ad; }
+        #turn-timer { font-size: 2em; font-weight: bold; color: var(--danger); margin: 10px 0; }
+        .hidden { display: none !important; }
+        
+        /* MODALS */
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; }
+        .modal-box { background: white; padding: 30px; border-radius: 12px; width: 600px; max-width: 90%; text-align: center; position: relative; }
+        #timer-bar { height: 10px; background: #ddd; margin: 15px 0; border-radius: 5px; overflow: hidden; }
+        #timer-fill { height: 100%; background: var(--accent); width: 100%; transition: width 0.1s linear; }
+        .opt-btn { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 15px; margin: 5px 0; width: 100%; text-align: left; cursor: pointer; font-size: 1.1em; border-radius: 6px;}
+        .opt-btn:hover { background: #eee; }
+
+        /* INTRO MODAL SPECIFIC */
+        #intro-screen { z-index: 500; } 
+        #intro-content { text-align: left; line-height: 1.6; max-height: 90vh; overflow-y: auto; }
+        #intro-content h2 { color: var(--primary); border-bottom: 2px solid #ddd; padding-bottom: 10px;}
+        #intro-content ul { padding-left: 20px; }
+        #intro-content li { margin-bottom: 10px; }
+
+    </style>
+</head>
+<body>
+
+    <div id="intro-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <div class="modal-box" id="intro-content">
+            <h2>🏆 Welcome to the Law Steeplechase</h2>
+            <p><b>Objective:</b> Complete 2 laps of the track and cross the finish line first.</p>
+            
+            <p><b>How to Play:</b></p>
+            <ul>
+                <li>Answer <b>A-Level Law</b> questions to unlock your turn.</li>
+                <li>Your chosen <b>Jockey</b> determines the difficulty of the questions (Easy/Medium/Hard).</li>
+                <li><b>The Obstacles:</b> The track has <span style="color:#8e44ad"><b>Fences</b></span> (needs Lift) and <span style="color:#d35400"><b>Water</b></span> (needs Reach).</li>
+                <li><b>The Choice:</b> Each turn, choose your strategy:
+                    <ul>
+                        <li>⚡ <b>Sprint:</b> Move fast, gain 0 resources.</li>
+                        <li>🎒 <b>Gather:</b> Gain resources, 0 movement.</li>
+                        <li>⚖️ <b>Canter:</b> A mix of both.</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <p><b>Decision Making:</b><br>
+            When you hit an obstacle, you must decide: 
+            <br>1. <b>Pay</b> resources to pass safely.
+            <br>2. <b>Wait & Gather</b> to build up strength.
+            <br>3. <b>Risk It</b> (Roll the dice - failure has penalties!).</p>
+
+            <p style="background:#f9f9f9; padding:10px; border-left: 4px solid var(--primary); font-size: 0.9em;">
+                <i><b>Educational Goal:</b> Use legal knowledge to drive your strategy. Short-term risks vs. long-term planning.</i>
+            </p>
+
+            <button class="btn btn-blue" onclick="closeIntro()">I Understand - Let's Race!</button>
+        </div>
+    </div>
+
+    <div id="start-screen" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:200; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <h1>⚖️ A-Level Law Steeplechase</h1>
+        <div id="selection-area" style="text-align:center;">
+            <h3 id="sys-ready">System Ready</h3>
+            <p>Select Your Difficulty & Strategy</p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-green" onclick="startGame('Easy')"><b>Easy (Tactician)</b><br><small>Safe Dice / 15s Timer</small></button>
+                <button class="btn btn-warn" onclick="startGame('Medium')"><b>Medium (Veteran)</b><br><small>Standard / 20s Timer</small></button>
+                <button class="btn btn-red" onclick="startGame('Hard')"><b>Hard (Daredevil)</b><br><small>Risky Dice / 25s Timer</small></button>
+            </div>
+            <p id="deck-status" style="margin-top:15px; font-size:0.8em; color:green;"></p>
+        </div>
+    </div>
+
+    <div id="arena-container" class="hidden">
+        <div id="center-hub">
+            <div class="dashboard-header">
+                <div>
+                    <h2 id="ui-jockey" style="margin:0;">Jockey</h2>
+                    <span id="ui-lap" style="font-size:0.9em; color:#666;">Lap 1 / 2</span>
+                </div>
+                <div id="turn-timer" class="hidden">60s</div>
+            </div>
+
+            <div class="resource-box">
+                <div class="res-badge bg-lift">🚧 LIFT: <span id="res-lift">0</span></div>
+                <div class="res-badge bg-reach">🌊 REACH: <span id="res-reach">0</span></div>
+            </div>
+
+            <div id="action-display">
+                <p>Waiting for game start...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-overlay" class="hidden">
+        <div class="modal-box">
+            <h3 id="q-diff">Question</h3>
+            <div id="timer-bar"><div id="timer-fill"></div></div>
+            <p id="q-text" style="font-size:1.3em; font-weight:bold; margin-bottom: 25px;">...</p>
+            <div id="q-opts"></div>
+        </div>
+    </div>
+
+    <div id="lap-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:250; display:flex; justify-content:center; align-items:center;">
+        <div class="modal-box">
+            <h2>🏁 Lap 1 Complete!</h2>
+            <p>You have reached the halfway point. You must now make a strategic choice.</p>
+            
+            <div style="background:#f1f1f1; padding:15px; margin-bottom:20px; text-align:left;">
+                <p><b>Option A: Maintain Strategy</b><br>Keep your current Jockey (Difficulty). <b>Keep all your stored resources.</b></p>
+                <p><b>Option B: Change Strategy</b><br>Pick a new Jockey (e.g., switch to Hard). <b>Lose all resources.</b></p>
+            </div>
+
+            <button class="btn btn-blue" onclick="game.lapDecide('KEEP')">Keep Strategy (Save Resources)</button>
+            <button class="btn btn-warning" onclick="game.lapDecide('CHANGE')">Change Strategy (Reset Resources)</button>
+        </div>
+    </div>
+
+    <script>
+        // --- EMBEDDED DATA (A-LEVEL LAW) ---
+        const RAW_CSV_DATA = `ID,Difficulty,Question_Text,Correct_Answer,Distractor_1,Distractor_2
+1,Easy,What is meant by law?,Rules enforced by courts and the state,Moral opinions held by individuals,Social customs with no legal force
+2,Easy,What is the difference between criminal and civil law?,"Criminal law punishes offences, civil law resolves disputes","Criminal law involves contracts, civil law involves prisons","Criminal law is optional, civil law is compulsory"
+3,Easy,What does mens rea mean?,The mental element of a crime,The physical act of a crime,The punishment for a crime
+4,Easy,What does actus reus mean?,The guilty act,The guilty mind,The court decision
+5,Easy,What two elements are usually needed to prove a crime?,Actus reus and mens rea,Harm and punishment,Intention and sentence
+6,Easy,What is the standard of proof in criminal cases?,Beyond reasonable doubt,On the balance of probabilities,Absolute certainty
+7,Easy,What is the standard of proof in civil cases?,On the balance of probabilities,Beyond reasonable doubt,Beyond all doubt
+8,Easy,What is precedent?,A legal principle from an earlier case,A statute passed by Parliament,A decision made by a jury
+9,Easy,What does stare decisis mean?,Let the decision stand,Change the law,Ignore past cases
+10,Easy,What is statutory law?,Law made by Parliament,Law made by judges,Law made by juries
+11,Easy,What is common law?,Law developed through court decisions,Law written in statutes,Law created by government departments
+12,Easy,What is Parliamentary sovereignty?,Parliament is the supreme law-making body,Judges have more power than Parliament,The Prime Minister makes all laws
+13,Easy,What is the separation of powers?,Division of government into three branches,Power held by one person,Laws apply only to poor people
+14,Easy,What are the three branches of government?,Legislature, Executive, Judiciary,Parliament, Police, Army,Courts, Prisons, Probation
+15,Easy,What is a Green Paper?,A consultation document on a proposed law,A final draft of a law,A law already passed
+16,Easy,What is a White Paper?,A firm proposal for a new law,An idea for discussion,A rejected law
+17,Easy,What is the First Reading of a Bill?,The formal introduction of the Bill,The final vote on the Bill,A detailed debate on the Bill
+18,Easy,What happens at the Committee Stage?,A detailed examination of the Bill,A general debate,The Royal Assent
+19,Easy,What is Royal Assent?,The Monarch’s formal approval of a Bill,The Prime Minister signing the Bill,The public voting on the Bill
+20,Easy,What is delegated legislation?,Law made by bodies other than Parliament,Law made by the King,Law made by the EU
+21,Easy,What is a bye-law?,Law made by local authorities,Law made by government ministers,Law made by the Privy Council
+22,Easy,What is a statutory instrument?,Law made by government ministers,Law made by judges,Law made by town councils
+23,Easy,What is an Order in Council?,Law made by the Privy Council,Law made by local councils,Law made by the police
+24,Easy,What is judicial review?,Courts checking if government acted lawfully,Parliament checking judges,Police checking criminals
+25,Easy,What is the literal rule?,Judges give words their plain meaning,Judges change the meaning,Judges ignore the words
+26,Easy,What is the golden rule?,Modifying the literal meaning to avoid absurdity,Following the literal meaning always,Making up new words
+27,Easy,What is the mischief rule?,Interpreting law to fix the problem it was meant to solve,Ignoring the problem,Creating new mischief
+28,Easy,What is the purposive approach?,Looking at Parliament’s intention,Looking at the dictionary only,Looking at old cases only
+29,Easy,What is the hierarchy of courts?,The order of importance of courts,The layout of a courtroom,The list of judges
+30,Easy,Which court hears most criminal cases?,Magistrates’ Court,Supreme Court,Crown Court
+31,Easy,Which court hears serious criminal cases?,Crown Court,County Court,High Court
+32,Easy,What does the Supreme Court do?,It is the final court of appeal,It hears all parking fines,It creates statutes
+33,Easy,What is a lay magistrate?,An unpaid volunteer judge,A qualified lawyer judge,A police officer
+34,Easy,What is a jury?,A group of 12 people deciding guilt,A group of judges,A group of lawyers
+35,Easy,Who can be a juror?,Anyone aged 18-75 on the electoral register,Only lawyers,Only university graduates
+36,Easy,What is the role of a barrister?,To advocate in court,To arrest criminals,To decide the sentence
+37,Easy,What is the role of a solicitor?,To advise clients and prepare cases,To act as a judge,To work for the police
+38,Easy,What is legal aid?,Government funding for legal costs,Free advice from friends,Paying the judge
+39,Easy,What is alternative dispute resolution (ADR)?,Solving disputes without going to court,Fighting in the street,Ignoring the problem
+40,Easy,What is the burden of proof?,Responsibility to prove a case,Level of evidence required,Length of trial
+41,Easy,Who has the burden of proof in criminal cases?,Prosecution,Defendant,Judge
+42,Easy,What is self-defence?,Reasonable force to protect oneself,Revenge,Punishment
+43,Easy,What is duress?,Being forced to commit a crime,Acting accidentally,Acting recklessly
+44,Easy,What is insanity?,A mental condition affecting responsibility,Lack of intention,Alcohol use
+45,Easy,What is intoxication?,Being under the influence of substances,Being mentally ill,Being reckless
+46,Easy,What is a suspended sentence?,Prison sentence delayed unless conditions are broken,Immediate imprisonment,A fine
+47,Easy,What is consistency in sentencing?,Similar offences receive similar sentences,Different offenders get different treatment,Judges ignore guidelines
+48,Easy,What is the rule of law?,Everyone is subject to the law,Judges make laws freely,Parliament follows judges
+49,Easy,What is access to justice?,Ability to use the legal system,Winning every case,Free legal advice only
+50,Easy,What is justice?,Fair application of the law,Automatic punishment,Public opinion
+51,Medium,Mens rea refers to:,The defendant’s mental state at the time,The defendant’s actions during the offence,The defendant’s behaviour after arrest
+52,Hard,Mens rea refers specifically to:,The defendant’s mental element at the time of the act,The defendant’s awareness of consequences,The defendant’s intention or recklessness generally`;
+
+        // --- CONFIG ---
+        const TRACK_SIZE = 50; 
+        const LAPS = 2;
+        const ACTION_LIMIT = 60; // Seconds
+
+        // --- OBSTACLE MAP (UPDATED COSTS: 4, 6, 8) ---
+        const OBSTACLES = {
+            6:  { name: "Low Fence",    type: "LIFT",  severity: 1, cost: 4 },
+            13: { name: "Small Ditch",  type: "REACH", severity: 1, cost: 4 },
+            20: { name: "Medium Gate",  type: "LIFT",  severity: 2, cost: 6 },
+            27: { name: "Open Water",   type: "REACH", severity: 2, cost: 6 },
+            34: { name: "Double Hedge", type: "LIFT",  severity: 2, cost: 6 },
+            41: { name: "Grand Canyon", type: "REACH", severity: 3, cost: 8 }, 
+            48: { name: "The High Wall",type: "LIFT",  severity: 3, cost: 8 }, 
+        };
+
+        let DB = [];
+
+        class Game {
+            constructor() {
+                this.lap = 1;
+                this.player = { pos: 0, lift: 0, reach: 0, jockey: null, blockedBy: null };
+                this.timer = null;
+                this.timeLeft = 0;
+            }
+
+            init(jockeyType) {
+                this.player.jockey = new Jockey(jockeyType);
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('arena-container').classList.remove('hidden');
+                document.getElementById('ui-jockey').innerText = `${this.player.jockey.name} (${jockeyType})`;
+                
+                this.renderTrack();
+                this.startTurn();
+            }
+
+            startTurn() {
+                this.stopTimer();
+                this.updateUI();
+                
+                let msg = this.player.blockedBy ? 
+                    `🛑 <b>STUCK AT OBSTACLE!</b><br>Answer correctly to make your move.` : 
+                    `🏁 <b>NEW TURN</b><br>Answer to unlock dice.`;
+
+                this.renderAction("MSG", msg);
+
+                setTimeout(() => {
+                    const q = this.getQuestion();
+                    showModal(q, this.player.jockey.qTimer, (success) => {
+                        if(success) {
+                            this.startActionPhase();
+                        } else {
+                            this.penalty("Wrong Answer / Timeout");
+                        }
+                    });
+                }, 1500);
+            }
+
+            startActionPhase() {
+                this.startTimer();
+                
+                if (this.player.blockedBy) {
+                    this.renderObstacleOptions(this.player.blockedBy);
+                } else {
+                    this.renderAction("STANCE");
+                }
+            }
+
+            executeMove(type) {
+                const r1 = roll();
+                const r2 = roll();
+                let move = 0;
+                let res = null;
+
+                if (type === 'SPRINT') move = r1 + r2;
+                else if (type === 'GATHER') {
+                    this.gain(this.player.jockey.bias(r1));
+                    this.gain(this.player.jockey.bias(r2));
+                    this.endPhase(`🎒 Gathered Resources!<br>Rolled ${r1} & ${r2}.`);
+                    return;
+                }
+                else if (type === 'CANTER') {
+                    move = r1;
+                    this.gain(this.player.jockey.bias(r2));
+                    res = this.player.jockey.bias(r2);
+                }
+
+                if (this.player.jockey.diff === 'Hard' && r1 <= 2 && type !== 'GATHER') {
+                    this.endPhase(`❌ STUMBLE!<br>Red die rolled ${r1}. No Move.`);
+                    return;
+                }
+
+                const start = this.player.pos;
+                const target = start + move;
+                
+                for(let i = start + 1; i <= target; i++) {
+                    let tileIdx = i % TRACK_SIZE;
+                    if (tileIdx === 0) tileIdx = TRACK_SIZE;
+
+                    if (OBSTACLES[tileIdx]) {
+                        this.player.pos = i - 1; 
+                        this.player.blockedBy = OBSTACLES[tileIdx]; 
+                        this.moveToken();
+                        this.renderObstacleOptions(OBSTACLES[tileIdx]);
+                        return; 
+                    }
+                }
+
+                this.player.pos = target;
+                this.moveToken();
+                this.checkLap();
+                
+                let msg = `💨 Moved ${move} spaces.`;
+                if(res) msg += `<br>Gained 1 ${res}.`;
+                this.endPhase(msg);
+            }
+
+            renderObstacleOptions(obs) {
+                const type = obs.type;
+                const have = type === 'LIFT' ? this.player.lift : this.player.reach;
+                const need = obs.cost;
+                const diff = Math.max(0, need - have);
+                const riskTarget = obs.severity + 2; 
+                const winSides = 7 - riskTarget;
+                const winPct = Math.round((winSides / 6) * 100);
+
+                let html = `<h3 style="margin:0; color:var(--danger)">🛑 ${obs.name}</h3>`;
+                html += `<p style="font-size:0.9em; margin:5px;"><b>${obs.type}</b> (Level ${obs.severity})</p>`;
+                
+                html += `<div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:10px; text-align:left; font-size:0.9em;">`;
+                html += `Cost: <b>${need}</b>. You have: <b>${have}</b>.<br>`;
+                
+                if (diff > 0) {
+                    html += `⚠️ You need <b>${diff} more</b> for 100% safety.<br>`;
+                    html += `🎲 Risk Win Chance: <b>${winPct}%</b> (Need ${riskTarget}+)`;
+                } else {
+                    html += `✅ You have enough to pay!`;
+                }
+                html += `</div>`;
+
+                if (diff === 0) {
+                    html += `<button class="btn btn-green" onclick="game.resolveObs('PAY', ${need}, '${type}')">💸 PAY & PASS (100% Safe)</button>`;
+                } else {
+                    html += `<button class="btn btn-red" onclick="game.resolveObs('RISK', 0, null, ${riskTarget})">🎲 RISK IT (${winPct}%)</button>`;
+                }
+                
+                html += `<button class="btn btn-purple" onclick="game.obstacleGather()">🎒 WAIT & GATHER RESOURCES</button>`;
+                html += `<p style="font-size:0.8em; color:#666;">Waiting builds resources but costs a turn.</p>`;
+
+                this.renderAction("HTML", html);
+            }
+
+            obstacleGather() {
+                const r1 = roll();
+                const r2 = roll();
+                this.gain(this.player.jockey.bias(r1));
+                this.gain(this.player.jockey.bias(r2));
+                this.endPhase(`💤 <b>WAITED.</b><br>Rolled ${r1} & ${r2}.<br>Gained 2 Resources.`);
+            }
+
+            resolveObs(method, cost, type, target) {
+                if (method === 'PAY') {
+                    if(type === 'LIFT') this.player.lift -= cost;
+                    else this.player.reach -= cost;
+                    this.passObstacle(true, "✅ Paid full cost.");
+                } else {
+                    const r = roll();
+                    if (r >= target) {
+                        this.passObstacle(true, `🎲 RISK SUCCESS!<br>Rolled ${r} (Needed ${target}+).`);
+                    } else {
+                        this.player.pos = Math.max(0, this.player.pos - 2); 
+                        this.moveToken();
+                        this.player.blockedBy = null; 
+                        this.endPhase(`💥 CRASH! Rolled ${r}.<br>Knocked back 2 spaces.`);
+                    }
+                }
+            }
+
+            passObstacle(success, msg) {
+                if(success) {
+                    this.player.pos += 1; 
+                    this.player.blockedBy = null; 
+                    this.moveToken();
+                    this.endPhase(msg);
+                }
+            }
+
+            penalty(reason) {
+                this.player.pos += 1; 
+                this.gain(Math.random()>0.5 ? "LIFT":"REACH");
+                this.moveToken();
+                this.endPhase(`❌ ${reason}<br>Penalty: Crawl 1 space.`);
+            }
+
+            endPhase(msg) {
+                this.stopTimer();
+                this.renderAction("HTML", `
+                    <p style="font-size:1.2em;">${msg}</p>
+                    <button class="btn btn-blue" onclick="game.startTurn()">➡️ NEXT TURN</button>
+                `);
+            }
+
+            gain(type) {
+                if(type === 'LIFT') this.player.lift++;
+                if(type === 'REACH') this.player.reach++;
+                this.updateUI();
+            }
+
+            checkLap() {
+                if(this.player.pos >= TRACK_SIZE * this.lap) {
+                    if(this.lap === LAPS) {
+                        alert("🏆 WINNER!");
+                        location.reload();
+                    } else {
+                        // PAUSE FOR LAP 2 DECISION
+                        document.getElementById('lap-modal').classList.remove('hidden');
+                        this.lap++;
+                        this.updateUI();
+                    }
+                }
+            }
+
+            lapDecide(decision) {
+                document.getElementById('lap-modal').classList.add('hidden');
+                
+                if (decision === 'CHANGE') {
+                    // Reset resources, Go to Start Screen
+                    this.player.lift = 0;
+                    this.player.reach = 0;
+                    document.getElementById('arena-container').classList.add('hidden');
+                    document.getElementById('start-screen').classList.remove('hidden');
+                } else {
+                    // KEEP: Just continue
+                    this.updateUI();
+                }
+            }
+
+            renderTrack() {
+                const arena = document.getElementById('arena-container');
+                Array.from(document.getElementsByClassName('tile')).forEach(e => e.remove());
+                Array.from(document.getElementsByClassName('token')).forEach(e => e.remove());
+
+                const coords = [];
+                for(let c=1; c<=13; c++) coords.push({r:1, c:c}); 
+                for(let r=1; r<=13; r++) coords.push({r:r, c:14}); 
+                for(let c=14; c>=2; c--) coords.push({r:14, c:c}); 
+                for(let r=14; r>=2; r--) coords.push({r:r, c:1}); 
+
+                for(let i=1; i<=TRACK_SIZE; i++) {
+                    const div = document.createElement('div');
+                    div.className = 'tile';
+                    div.id = `tile-${i}`;
+                    div.style.gridRow = coords[i-1].r;
+                    div.style.gridColumn = coords[i-1].c;
+                    div.innerHTML = `<span class="tile-number">${i}</span>`;
+
+                    if(OBSTACLES[i]) {
+                        div.classList.add('obstacle');
+                        const o = OBSTACLES[i];
+                        if(o.severity===1) div.classList.add('obs-green');
+                        if(o.severity===2) div.classList.add('obs-amber');
+                        if(o.severity===3) div.classList.add('obs-red');
+                        div.innerHTML += `<span class="tile-icon">${o.type==='LIFT'?'🚧':'🌊'}</span>`;
+                    }
+                    arena.appendChild(div);
+                }
+
+                const t = document.createElement('div');
+                t.id = 'p1-token';
+                t.className = 'token token-p1';
+                t.innerHTML = '♟️';
+                arena.appendChild(t);
+                this.moveToken();
+            }
+
+            moveToken() {
+                const t = document.getElementById('p1-token');
+                let visPos = this.player.pos % TRACK_SIZE;
+                if(visPos === 0 && this.player.pos > 0) visPos = TRACK_SIZE;
+                if(visPos === 0) visPos = 1; 
+                
+                const tile = document.getElementById(`tile-${visPos}`);
+                if(tile) {
+                    t.style.gridRow = tile.style.gridRow;
+                    t.style.gridColumn = tile.style.gridColumn;
+                    t.style.margin = "auto";
+                    t.style.position = "relative"; 
+                    tile.appendChild(t); 
+                }
+            }
+
+            renderAction(mode, content) {
+                const area = document.getElementById('action-display');
+                if (mode === 'MSG') {
+                    area.innerHTML = `<p style="font-size:1.2em;">${content}</p>`;
+                } 
+                else if (mode === 'HTML') {
+                    area.innerHTML = content;
+                }
+                else if (mode === 'STANCE') {
+                    area.innerHTML = `
+                        <p style="color:var(--primary); font-weight:bold;">Choose Strategy:</p>
+                        <button class="btn btn-blue" onclick="game.executeMove('SPRINT')">⚡ SPRINT (Max Move)</button>
+                        <button class="btn btn-green" onclick="game.executeMove('GATHER')">🎒 GATHER (Max Res)</button>
+                        <button class="btn btn-warn" onclick="game.executeMove('CANTER')">⚖️ CANTER (Split)</button>
+                    `;
+                }
+            }
+
+            updateUI() {
+                document.getElementById('res-lift').innerText = this.player.lift;
+                document.getElementById('res-reach').innerText = this.player.reach;
+                document.getElementById('ui-lap').innerText = `Lap ${this.lap} / ${LAPS}`;
+            }
+
+            startTimer() {
+                this.stopTimer();
+                this.timeLeft = ACTION_LIMIT;
+                const el = document.getElementById('turn-timer');
+                el.classList.remove('hidden');
+                el.innerText = this.timeLeft + "s";
+                
+                this.timer = setInterval(() => {
+                    this.timeLeft--;
+                    el.innerText = this.timeLeft + "s";
+                    if(this.timeLeft <= 0) {
+                        this.stopTimer();
+                        alert("⏳ TIME UP!");
+                        if(this.player.blockedBy) {
+                            const t = this.player.blockedBy.severity + 2;
+                            this.resolveObs('RISK',0,null,t);
+                        } else {
+                            this.executeMove('CANTER');
+                        }
+                    }
+                }, 1000);
+            }
+
+            stopTimer() {
+                if(this.timer) clearInterval(this.timer);
+                document.getElementById('turn-timer').classList.add('hidden');
+            }
+
+            getQuestion() {
+                // TIERED DIFFICULTY LOGIC (Retained for Law Version)
+                const diff = this.player.jockey.diff;
+                let pool = DB.filter(q => q.difficulty === diff);
+                if(pool.length === 0) pool = DB; // Fallback
+                return pool[Math.floor(Math.random()*pool.length)];
+            }
+        }
+
+        class Jockey {
+            constructor(t) {
+                this.diff = t;
+                if(t==='Easy') { this.name='The Tactician'; this.qTimer=15; this.biasArr=[1,2,3,4]; }
+                if(t==='Medium') { this.name='The Veteran'; this.qTimer=20; this.biasArr=[1,2,3]; }
+                if(t==='Hard') { this.name='The Daredevil'; this.qTimer=25; this.biasArr=[1,2]; }
+            }
+            bias(r) { return this.biasArr.includes(r) ? 'LIFT' : 'REACH'; }
+        }
+
+        const game = new Game();
+        function startGame(t) { game.init(t); }
+        function closeIntro() { 
+            document.getElementById('intro-screen').classList.add('hidden'); 
+            document.getElementById('start-screen').classList.remove('hidden'); 
+        }
+        function roll() { return Math.ceil(Math.random()*6); }
+
+        let qInterval;
+        function showModal(q, sec, cb) {
+            const m = document.getElementById('modal-overlay');
+            const fill = document.getElementById('timer-fill');
+            m.classList.remove('hidden');
+            document.getElementById('q-diff').innerText = q.difficulty + " Question"; 
+            document.getElementById('q-text').innerText = q.text;
+
+            const opts = [{t:q.correct,v:true}, {t:q.d1,v:false}, {t:q.d2,v:false}].sort(()=>Math.random()-0.5);
+            const c = document.getElementById('q-opts'); c.innerHTML='';
+            
+            opts.forEach(o => {
+                const b = document.createElement('div');
+                b.className = 'opt-btn'; b.innerText = o.t.replace(/"/g, ''); 
+                b.onclick = () => { end(o.v); };
+                c.appendChild(b);
+            });
+
+            fill.style.width='100%'; fill.style.transition='none';
+            setTimeout(()=>{ fill.style.transition=`width ${sec}s linear`; fill.style.width='0%'; },10);
+            
+            let t = sec;
+            if(qInterval) clearInterval(qInterval);
+            qInterval = setInterval(()=>{
+                t--; if(t<=0) end(false);
+            },1000);
+
+            function end(res) {
+                clearInterval(qInterval); m.classList.add('hidden'); cb(res);
+            }
+        }
+
+        // --- LOAD EMBEDDED DATA ON INIT ---
+        window.onload = function() {
+            const rows = RAW_CSV_DATA.split('\n').slice(1);
+            const parsed = [];
+            const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+
+            rows.forEach((row, i) => {
+                const cols = row.split(regex); 
+                if(cols.length >= 6) {
+                    parsed.push({
+                        id: i, 
+                        difficulty: cols[1].trim(), 
+                        text: cols[2].trim().replace(/^"|"$/g, ''), 
+                        correct: cols[3].trim().replace(/^"|"$/g, ''), 
+                        d1: cols[4].trim().replace(/^"|"$/g, ''), 
+                        d2: cols[5].trim().replace(/^"|"$/g, '')
+                    });
+                }
+            });
+            DB = parsed; 
+            document.getElementById('deck-status').innerText = `✅ Loaded ${parsed.length} Questions (Embedded)`;
+        };
+
+    </script>
+</body>
+</html>
